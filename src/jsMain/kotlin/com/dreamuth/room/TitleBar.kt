@@ -31,6 +31,7 @@ external interface TitleBarProps: RProps {
     var persons: List<String>
     var selectedPerson: String
     var selectedTopic: Topic
+    var showAnswer: Boolean
     var firstRowStyle: String
     var firstRowWidth: LinearDimension?
     var personButtonWidth: LinearDimension?
@@ -85,12 +86,18 @@ class TitleBar : RComponent<TitleBarProps, RState>() {
                         }
                     }
                 }
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf(props.secondRowStyle)
+                    props.secondRowWidth?.let { width = it }
+                }
                 navigation {
                     buttonSize = props.navigationWidth
                     smallBtnWidth = props.navigationBtnWidth
 //                    timer = props.timer
                     onShowAnswerClick = {
-                        props.onShowAnswerClick(true)
+                        props.onShowAnswerClick(!props.showAnswer)
                     }
                     onPreviousClick = {
                         props.onShowAnswerClick(false)

@@ -53,7 +53,7 @@ private var header = functionalComponent<HeaderProps> { props ->
         if (props.activeState != GameState.NONE) {
             styledButton {
                 css {
-                    classes = mutableListOf("btn btn-outline-warning me-2")
+                    classes = mutableListOf("btn btn-outline-warning mr-2")
                 }
                 attrs {
                     onClickFunction = {
@@ -61,8 +61,8 @@ private var header = functionalComponent<HeaderProps> { props ->
                     }
                 }
                 val text = when (props.activeState) {
-                    GameState.PRACTICE, GameState.ADMIN_ROOM -> "Sign out"
-                    else -> "Back"
+                    GameState.PRACTICE, GameState.ADMIN_ROOM -> "வெளியேறு"
+                    else -> "முன்பு"
                 }
                 +text
             }

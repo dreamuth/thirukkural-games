@@ -17,6 +17,7 @@
 package com.dreamuth.room
 
 import com.dreamuth.Thirukkural
+import kotlinx.css.LinearDimension
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -25,6 +26,7 @@ import react.ReactElement
 
 external interface AthikaramProps: RProps {
     var question: String
+    var questionSize: LinearDimension
     var thirukkurals: List<Thirukkural>
     var showAnswer: Boolean
 }
@@ -33,6 +35,7 @@ class Athikaram : RComponent<AthikaramProps, RState>() {
     override fun RBuilder.render() {
         question {
             question = props.question
+            questionSize = props.questionSize
         }
         if (props.showAnswer) {
             props.thirukkurals.forEach { thirukkural ->

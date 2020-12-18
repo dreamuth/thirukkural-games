@@ -39,7 +39,8 @@ data class UserInfo(
 data class QuestionState(
     var selectedTopic: Topic,
     var thirukkurals: List<Thirukkural>,
-    var athikaramState: AthikaramState)
+    var athikaramState: AthikaramState,
+    var thirukkuralState: ThirukkuralState)
 
 data class AthikaramState(
     override var index: Int,
@@ -52,15 +53,28 @@ data class AthikaramState(
         thirukkurals.map { it.athikaram }.distinct()
     )
     fun getCurrent(): String = athikarams[index]
-    fun goNext() { index = getNext(athikarams.size) }
-    fun goPrevious() { index = getPrevious(athikarams.size) }
+    fun goNext() = goNext(athikarams.size)
+    fun goPrevious() = goPrevious(athikarams.size)
     fun getReset(): AthikaramState = this.copy(index = getReset(athikarams.size))
 }
 
+data class ThirukkuralState(
+    override var index: Int,
+    override var history: MutableList<Int>,
+    val kurals: List<Thirukkural>
+) : HistoryState {
+    constructor(thirukkurals: List<Thirukkural>): this(nextIndex(0, thirukkurals.size), mutableListOf(), thirukkurals)
+    fun getCurrent(): Thirukkural = kurals[index]
+    fun goNext() = goNext(kurals.size)
+    fun goPrevious() = goPrevious(kurals.size)
+    fun getReset(): ThirukkuralState = this.copy(index = getReset(kurals.size))
+}
+
+
 interface HistoryState {
-    val index: Int
+    var index: Int
     var history: MutableList<Int>
-    fun getNext(maxIndex: Int): Int {
+    fun goNext(maxIndex: Int) {
         if (history.isEmpty()) {
             history = generateRandomList(maxIndex)
             history.remove(index)
@@ -69,9 +83,9 @@ interface HistoryState {
         val nextIndex = history.removeFirst()
         history.add(nextIndex)
         println("${this::class} Current: $index to New: $nextIndex of Total: $maxIndex")
-        return nextIndex
+        index = nextIndex
     }
-    fun getPrevious(maxIndex: Int): Int {
+    fun goPrevious(maxIndex: Int) {
         if (history.isEmpty()) {
             history = generateRandomList(maxIndex)
             history.remove(index)
@@ -81,7 +95,7 @@ interface HistoryState {
         history.add(0, nextIndex)
         nextIndex = history.last()
         println("${this::class} Current: $index to New: $nextIndex of Total: $maxIndex")
-        return nextIndex
+        index = nextIndex
     }
     fun getReset(maxIndex: Int): Int {
         if (history.isEmpty()) {

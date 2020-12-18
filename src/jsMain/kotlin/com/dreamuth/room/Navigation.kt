@@ -45,63 +45,41 @@ external interface NavigationProps: RProps {
 
 class Navigation : RComponent<NavigationProps, RState>() {
     override fun RBuilder.render() {
-//        styledButton {
-//            css {
-//                classes = mutableListOf("btn btn-success mr-2")
-//                width = props.buttonSize
-//            }
-//            if (props.timer.show) +"${props.timer.time / 60 % 60} : ${props.timer.time % 60} " else +"நேரம் "
-//            attrs {
-//                onClickFunction = {
-//                    props.onTimerClick()
-//                }
-//            }
-//            if (props.timer.show) {
-//                styledSpan {
-//                    css {
-//                        classes = mutableListOf("badge badge-light")
-//                    }
-//                    +"${props.timer.count}"
-//                }
-//            }
-//        }
-        styledDiv {
-            styledButton {
-                css {
-                    classes = mutableListOf("btn btn-success me-2")
-                    width = props.buttonSize
-                }
-                attrs {
-                    onClickFunction = {
-                        props.onPreviousClick()
-                    }
-                }
-                +"முன்பு"
+        styledButton {
+            css {
+                classes = mutableListOf("btn btn-success mr-2")
+                width = props.buttonSize
             }
-            styledButton {
-                css {
-                    classes = mutableListOf("btn btn-danger me-2")
-                    width = props.buttonSize
-                }
-                +"பதில்"
-                attrs {
-                    onClickFunction = {
-                        props.onShowAnswerClick()
-                    }
+            attrs {
+                onClickFunction = {
+                    props.onPreviousClick()
                 }
             }
-            styledButton {
-                css {
-                    classes = mutableListOf("btn btn-success")
-                    width = props.buttonSize
-                }
-                attrs {
-                    onClickFunction = {
-                        props.onNextClick()
-                    }
-                }
-                +"அடுத்து"
+            +"முன்பு"
+        }
+        styledButton {
+            css {
+                classes = mutableListOf("btn btn-danger mr-2")
+                width = props.buttonSize
             }
+            +"பதில்"
+            attrs {
+                onClickFunction = {
+                    props.onShowAnswerClick()
+                }
+            }
+        }
+        styledButton {
+            css {
+                classes = mutableListOf("btn btn-success")
+                width = props.buttonSize
+            }
+            attrs {
+                onClickFunction = {
+                    props.onNextClick()
+                }
+            }
+            +"அடுத்து"
         }
     }
 }

@@ -182,7 +182,11 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
             userInfo?.let {
                 val roomState = gameState.getRoomState(userInfo.roomName)
                 roomState?.let {
-                    roomState.athikaramState.goNext()
+                    when (roomState.selectedTopic) {
+                        Topic.Athikaram -> roomState.athikaramState.goNext()
+                        Topic.KuralPorul -> roomState.thirukkuralState.goNext()
+                        else -> println("Error: Invalid next request...")
+                    }
                     sendPracticeData(roomState, userInfo.roomName, gameState)
                 }
             }
@@ -192,7 +196,22 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
             userInfo?.let {
                 val roomState = gameState.getRoomState(userInfo.roomName)
                 roomState?.let {
-                    roomState.athikaramState.goPrevious()
+                    when (roomState.selectedTopic) {
+                        Topic.Athikaram -> roomState.athikaramState.goPrevious()
+                        Topic.KuralPorul -> roomState.thirukkuralState.goPrevious()
+                        else -> println("Error: Invalid next request...")
+                    }
+                    sendPracticeData(roomState, userInfo.roomName, gameState)
+                }
+            }
+        }
+        command.startsWith(ServerCommand.TOPIC_CHANGE.name) -> {
+            val newTopic = Topic.valueOf(command.removePrefix(ServerCommand.TOPIC_CHANGE.name))
+            val userInfo = gameState.getUserInfo(userSession)
+            userInfo?.let {
+                val roomState = gameState.getRoomState(userInfo.roomName)
+                roomState?.let {
+                    roomState.selectedTopic = newTopic
                     sendPracticeData(roomState, userInfo.roomName, gameState)
                 }
             }
@@ -201,12 +220,18 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
 }
 
 suspend fun sendPracticeData(roomState: QuestionState, roomName: String, gameState: GameState) {
-    val practiceData = PracticeData(
-        roomState.selectedTopic,
-        roomState.athikaramState.getCurrent(),
-        roomState.thirukkurals.filter { it.athikaram == roomState.athikaramState.getCurrent() })
-    gameState.getSessionsForRoom(roomName)
-        .forEach { it.send(createMessage(practiceData)) }
+    val question = when (roomState.selectedTopic) {
+        Topic.Athikaram -> roomState.athikaramState.getCurrent()
+        Topic.KuralPorul -> roomState.thirukkuralState.getCurrent().porul
+        else -> "Error..."
+    }
+    val thirukkurals = when (roomState.selectedTopic) {
+        Topic.Athikaram -> roomState.thirukkuralState.kurals.filter { it.athikaram == question }
+        Topic.KuralPorul -> roomState.thirukkuralState.kurals.filter { it.porul == question }
+        else -> listOf()
+    }
+    val practiceData = PracticeData(roomState.selectedTopic, question, thirukkurals)
+    gameState.getSessionsForRoom(roomName).forEach { it.send(createMessage(practiceData)) }
 }
 
 fun createMessage(practiceData: PracticeData) =
@@ -214,7 +239,7 @@ fun createMessage(practiceData: PracticeData) =
 
 private suspend fun createQuestionState(): QuestionState {
     val thirukkurals = fetchSource()
-    return QuestionState(Topic.Athikaram, thirukkurals, AthikaramState(thirukkurals))
+    return QuestionState(Topic.Athikaram, thirukkurals, AthikaramState(thirukkurals), ThirukkuralState(thirukkurals))
 }
 
 /**

@@ -49,10 +49,10 @@ enum class GameState {
 val app = functionalComponent<RProps> {
     val text by useState("Loading...")
     var gameState by useState(GameState.NONE)
-    var selectedTopic by useState(Topic.Athikaram)
-    var athikaramQuestion by useState("loading...")
-    var athikaramThirukkurals by useState(listOf<Thirukkural>())
-    var athikaramShowAnswer by useState(false)
+    var activeTopic by useState(Topic.Athikaram)
+    var activeQuestion by useState("loading...")
+    var activeKurals by useState(listOf<Thirukkural>())
+    var activeShowAnswer by useState(false)
 
     useEffect(listOf()) {
         scope.launch {
@@ -64,10 +64,10 @@ val app = functionalComponent<RProps> {
                         val data = message.removePrefix(ClientCommand.PRACTICE_RESPONSE.name)
                         val practiceData = Json.decodeFromString<PracticeData>(data)
                         gameState = GameState.PRACTICE
-                        selectedTopic = practiceData.topic
-                        athikaramQuestion = practiceData.question
-                        athikaramThirukkurals = practiceData.thirukkurals
-                        athikaramShowAnswer = false
+                        activeTopic = practiceData.topic
+                        activeQuestion = practiceData.question
+                        activeKurals = practiceData.thirukkurals
+                        activeShowAnswer = false
                     }
                 }
             }
@@ -128,12 +128,14 @@ val app = functionalComponent<RProps> {
             }
             GameState.PRACTICE -> {
                 practice {
-                    topic = selectedTopic
-                    question = athikaramQuestion
-                    thirukkurals = athikaramThirukkurals
-                    showAnswer = athikaramShowAnswer
+                    topic = activeTopic
+                    question = activeQuestion
+                    thirukkurals = activeKurals
+                    showAnswer = activeShowAnswer
                     onTopicClick = {
-
+                        scope.launch {
+                            wsClient.send(ServerCommand.TOPIC_CHANGE.name + it.name)
+                        }
                     }
                     onPreviousClick = {
                         scope.launch {
@@ -141,7 +143,7 @@ val app = functionalComponent<RProps> {
                         }
                     }
                     onShowAnswerClick = {
-                        athikaramShowAnswer = it
+                        activeShowAnswer = it
                     }
                     onNextClick = {
                         scope.launch {

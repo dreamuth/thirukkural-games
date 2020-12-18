@@ -19,6 +19,7 @@ package com.dreamuth.room
 import com.dreamuth.Thirukkural
 import com.dreamuth.Topic
 import kotlinx.css.px
+import kotlinx.css.rem
 import react.RBuilder
 import react.RProps
 import react.child
@@ -45,7 +46,7 @@ private var practice = functionalComponent<PracticeProps> { props ->
         }
         titleBar {
             selectedTopic = props.topic
-            firstRowStyle = "d-flex justify-content-between align-items-center p-0"
+            firstRowStyle = "col pl-0 pr-0"
             topicButtonWidth = 200.px
             secondRowStyle = "col-md-auto pr-0"
             navigationWidth = 120.px
@@ -57,12 +58,11 @@ private var practice = functionalComponent<PracticeProps> { props ->
         }
     }
 
-    if (props.topic == Topic.Athikaram) {
-        athikaram {
-            question = props.question
-            thirukkurals = props.thirukkurals
-            showAnswer = props.showAnswer
-        }
+    athikaram {
+        question = props.question
+        questionSize = if (props.topic == Topic.Athikaram) 3.rem else 2.rem
+        thirukkurals = props.thirukkurals
+        showAnswer = props.showAnswer
     }
 }
 

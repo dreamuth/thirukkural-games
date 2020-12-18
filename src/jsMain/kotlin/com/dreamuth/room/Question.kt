@@ -16,8 +16,8 @@
 
 package com.dreamuth.room
 
+import kotlinx.css.LinearDimension
 import kotlinx.css.fontSize
-import kotlinx.css.rem
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -28,6 +28,7 @@ import styled.styledDiv
 
 external interface QuestionProps: RProps {
     var question: String
+    var questionSize: LinearDimension
 }
 
 class Question : RComponent<QuestionProps, RState>() {
@@ -39,7 +40,7 @@ class Question : RComponent<QuestionProps, RState>() {
             styledDiv {
                 css {
                     classes = mutableListOf("card-header")
-                    fontSize = 3.rem
+                    fontSize = props.questionSize
                 }
                 +props.question
             }

@@ -126,5 +126,12 @@ class GameState {
         return roomState[roomName]
     }
 
+    fun getSessionsForRoom(roomName: String): List<WebSocketSession> {
+        return users.values
+            .filter { it.roomName == roomName }
+            .map { it.userSession }
+            .map { sessions.getOrDefault(it, listOf()) }
+            .flatten()
+    }
 }
 

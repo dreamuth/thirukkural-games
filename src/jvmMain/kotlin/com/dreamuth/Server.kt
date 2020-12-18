@@ -120,9 +120,9 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 socketSession = socketSession,
                 roomName = gameState.createRoomName(),
                 userType = UserType.PRACTICE)
-            gameState.addUserInfo(userInfo)
-            val roomState = gameState.addRoomState(userInfo.roomName, createQuestionState())
-            sendPracticeData(roomState, socketSession)
+            val activeUserInfo = gameState.addUserInfo(userInfo)
+            val roomState = gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
+            sendPracticeData(roomState, activeUserInfo.roomName, gameState)
         }
         command.startsWith(CommandType.CREATE_ROOM.name) -> {
             val data = command.removePrefix(CommandType.CREATE_ROOM.name)
@@ -134,9 +134,9 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 userType = UserType.ADMIN,
                 adminPasscode = gameState.createAdminPasscode(),
                 guestPasscode = gameState.createGuestPasscode())
-            gameState.addUserInfo(userInfo)
-            gameState.addRoomState(userInfo.roomName, createQuestionState())
-            val response = AdminRoomResponse(userInfo.adminPasscode!!, userInfo.guestPasscode!!)
+            val activeUserInfo = gameState.addUserInfo(userInfo)
+            gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
+            val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode!!)
             socketSession.send(Frame.Text(CommandType.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response)))
         }
         command.startsWith(CommandType.ADMIN_JOIN_ROOM.name) -> {
@@ -184,7 +184,7 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 val roomState = gameState.getRoomState(userInfo.roomName)
                 roomState?.let {
                     roomState.athikaramState.goNext()
-                    sendPracticeData(roomState, socketSession)
+                    sendPracticeData(roomState, userInfo.roomName, gameState)
                 }
             }
         }
@@ -194,19 +194,20 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 val roomState = gameState.getRoomState(userInfo.roomName)
                 roomState?.let {
                     roomState.athikaramState.goPrevious()
-                    sendPracticeData(roomState, socketSession)
+                    sendPracticeData(roomState, userInfo.roomName, gameState)
                 }
             }
         }
     }
 }
 
-private suspend fun sendPracticeData(roomState: QuestionState, socketSession: WebSocketSession) {
+private suspend fun sendPracticeData(roomState: QuestionState, roomName: String, gameState: GameState) {
     val practiceData = PracticeData(
         roomState.selectedTopic,
         roomState.athikaramState.getCurrent(),
         roomState.thirukkurals.filter { it.athikaram == roomState.athikaramState.getCurrent() })
-    socketSession.send(Frame.Text(CommandType.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData)))
+    gameState.getSessionsForRoom(roomName)
+        .forEach { it.send(Frame.Text(CommandType.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData))) }
 }
 
 private suspend fun createQuestionState(): QuestionState {

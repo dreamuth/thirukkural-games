@@ -59,6 +59,10 @@ class WsClient(private val client: HttpClient) {
         session?.send(Frame.Text(message))
     }
 
+    suspend fun send(command: ServerCommand) {
+        session?.send(Frame.Text(command.name))
+    }
+
     suspend fun receive(onReceive: (input: String) -> Unit) {
         while (true) {
             val frame = session?.incoming?.receive()

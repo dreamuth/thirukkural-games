@@ -24,7 +24,6 @@ import com.dreamuth.room.adminRoom
 import com.dreamuth.room.practice
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
-import io.ktor.http.cio.websocket.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
@@ -33,7 +32,6 @@ import react.RProps
 import react.functionalComponent
 import react.useEffect
 import react.useState
-import styled.css
 import styled.styledDiv
 
 val scope = MainScope()
@@ -49,7 +47,7 @@ enum class GameState {
 }
 
 val app = functionalComponent<RProps> {
-    var text by useState("Loading...")
+    val text by useState("Loading...")
     var gameState by useState(GameState.NONE)
     var selectedTopic by useState(Topic.Athikaram)
     var athikaramQuestion by useState("loading...")
@@ -62,9 +60,10 @@ val app = functionalComponent<RProps> {
             wsClient.receive { message ->
                 println(message)
                 when {
-                    message.startsWith(CommandType.PRACTICE_RESPONSE.name) -> {
-                        val data = message.removePrefix(CommandType.PRACTICE_RESPONSE.name)
+                    message.startsWith(ClientCommand.PRACTICE_RESPONSE.name) -> {
+                        val data = message.removePrefix(ClientCommand.PRACTICE_RESPONSE.name)
                         val practiceData = Json.decodeFromString<PracticeData>(data)
+                        gameState = GameState.PRACTICE
                         selectedTopic = practiceData.topic
                         athikaramQuestion = practiceData.question
                         athikaramThirukkurals = practiceData.thirukkurals
@@ -95,7 +94,7 @@ val app = functionalComponent<RProps> {
                     onPracticeBtnClick = {
                         gameState = GameState.PRACTICE
                         scope.launch {
-                            wsClient.send(CommandType.PRACTICE.name)
+                            wsClient.send(ServerCommand.PRACTICE)
                         }
                     }
                 }
@@ -138,7 +137,7 @@ val app = functionalComponent<RProps> {
                     }
                     onPreviousClick = {
                         scope.launch {
-                            wsClient.send(CommandType.PREVIOUS.name)
+                            wsClient.send(ServerCommand.PREVIOUS)
                         }
                     }
                     onShowAnswerClick = {
@@ -146,7 +145,7 @@ val app = functionalComponent<RProps> {
                     }
                     onNextClick = {
                         scope.launch {
-                            wsClient.send(CommandType.NEXT.name)
+                            wsClient.send(ServerCommand.NEXT)
                         }
                     }
                 }

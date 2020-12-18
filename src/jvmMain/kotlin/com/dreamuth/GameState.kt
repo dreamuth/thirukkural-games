@@ -30,9 +30,22 @@ class GameState {
     private val users = ConcurrentHashMap<UserSession, UserInfo>()
     private val sessions = ConcurrentHashMap<UserSession, MutableList<WebSocketSession>>()
 
-    fun userJoin(userSession: UserSession, socketSession: WebSocketSession) {
+    suspend fun userJoin(userSession: UserSession, socketSession: WebSocketSession) {
         val list = sessions.computeIfAbsent(userSession) { CopyOnWriteArrayList() }
         list.add(socketSession)
+        if (users.containsKey(userSession)) {
+            users[userSession]?.roomName?.let { roomName ->
+                roomState[roomName]?.let { questionState ->
+                    val practiceData = PracticeData(
+                        questionState.selectedTopic,
+                        questionState.athikaramState.getCurrent(),
+                        questionState.thirukkurals.filter { it.athikaram == questionState.athikaramState.getCurrent() })
+                    socketSession.send(createMessage(practiceData))
+                }
+            }
+        } else {
+            socketSession.send(Frame.Text("Welcome $userSession"))
+        }
     }
 
     fun userLeft(userSession: UserSession, serverSession: WebSocketServerSession) {

@@ -52,15 +52,18 @@ data class KuralOnly(val firstLine: String, val secondLine: String)
 @Serializable
 data class PracticeData(val topic: Topic, val question: String, val thirukkurals: List<Thirukkural>)
 
-enum class CommandType {
+enum class ServerCommand {
     PRACTICE,
-    PRACTICE_RESPONSE,
     CREATE_ROOM,
-    ADMIN_ROOM_RESPONSE,
     ADMIN_JOIN_ROOM,
     GUEST_JOIN_ROOM,
     NEXT,
     PREVIOUS
+}
+
+enum class ClientCommand {
+    PRACTICE_RESPONSE,
+    ADMIN_ROOM_RESPONSE
 }
 
 enum class Topic(val tamil: String) {

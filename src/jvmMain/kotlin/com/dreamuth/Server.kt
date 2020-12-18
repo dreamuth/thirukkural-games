@@ -95,7 +95,6 @@ fun Application.myModule() {
                 return@webSocket
             }
             println("client $session connected...")
-            send(Frame.Text("Welcome $session"))
             gameState.userJoin(session, this)
             try {
                 incoming.consumeEach { frame ->
@@ -114,7 +113,7 @@ fun Application.myModule() {
 
 suspend fun processRequest(gameState: GameState, userSession: UserSession, socketSession: WebSocketSession, command: String) {
     when {
-        command.startsWith(CommandType.PRACTICE.name) -> {
+        command.startsWith(ServerCommand.PRACTICE.name) -> {
             val userInfo = UserInfo(
                 userSession = userSession,
                 socketSession = socketSession,
@@ -124,8 +123,8 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
             val roomState = gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
             sendPracticeData(roomState, activeUserInfo.roomName, gameState)
         }
-        command.startsWith(CommandType.CREATE_ROOM.name) -> {
-            val data = command.removePrefix(CommandType.CREATE_ROOM.name)
+        command.startsWith(ServerCommand.CREATE_ROOM.name) -> {
+            val data = command.removePrefix(ServerCommand.CREATE_ROOM.name)
             val createRoom = Json.decodeFromString<CreateRoom>(data)
             val userInfo = UserInfo(
                 userSession = userSession,
@@ -137,10 +136,10 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
             val activeUserInfo = gameState.addUserInfo(userInfo)
             gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
             val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode!!)
-            socketSession.send(Frame.Text(CommandType.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response)))
+            socketSession.send(Frame.Text(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response)))
         }
-        command.startsWith(CommandType.ADMIN_JOIN_ROOM.name) -> {
-            val data = command.removePrefix(CommandType.ADMIN_JOIN_ROOM.name)
+        command.startsWith(ServerCommand.ADMIN_JOIN_ROOM.name) -> {
+            val data = command.removePrefix(ServerCommand.ADMIN_JOIN_ROOM.name)
             val adminJoinRoom = Json.decodeFromString<AdminJoinRoom>(data)
             if (!gameState.isExistingRoom(adminJoinRoom.roomName)) {
                 socketSession.send(Frame.Text("ERROR: Invalid room name"))
@@ -157,11 +156,11 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 )
                 gameState.addUserInfo(userInfo)
                 val response = AdminRoomResponse(userInfo.adminPasscode!!, userInfo.guestPasscode!!)
-                socketSession.send(Frame.Text(CommandType.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response)))
+                socketSession.send(Frame.Text(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response)))
             }
         }
-        command.startsWith(CommandType.GUEST_JOIN_ROOM.name) -> {
-            val data = command.removePrefix(CommandType.GUEST_JOIN_ROOM.name)
+        command.startsWith(ServerCommand.GUEST_JOIN_ROOM.name) -> {
+            val data = command.removePrefix(ServerCommand.GUEST_JOIN_ROOM.name)
             val guestJoinRoom = Json.decodeFromString<GuestJoinRoom>(data)
             if (!gameState.isExistingRoom(guestJoinRoom.roomName)) {
                 socketSession.send(Frame.Text("ERROR: Invalid room name"))
@@ -178,7 +177,7 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 gameState.addUserInfo(userInfo)
             }
         }
-        command.startsWith(CommandType.NEXT.name) -> {
+        command.startsWith(ServerCommand.NEXT.name) -> {
             val userInfo = gameState.getUserInfo(userSession)
             userInfo?.let {
                 val roomState = gameState.getRoomState(userInfo.roomName)
@@ -188,7 +187,7 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 }
             }
         }
-        command.startsWith(CommandType.PREVIOUS.name) -> {
+        command.startsWith(ServerCommand.PREVIOUS.name) -> {
             val userInfo = gameState.getUserInfo(userSession)
             userInfo?.let {
                 val roomState = gameState.getRoomState(userInfo.roomName)
@@ -201,14 +200,17 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
     }
 }
 
-private suspend fun sendPracticeData(roomState: QuestionState, roomName: String, gameState: GameState) {
+suspend fun sendPracticeData(roomState: QuestionState, roomName: String, gameState: GameState) {
     val practiceData = PracticeData(
         roomState.selectedTopic,
         roomState.athikaramState.getCurrent(),
         roomState.thirukkurals.filter { it.athikaram == roomState.athikaramState.getCurrent() })
     gameState.getSessionsForRoom(roomName)
-        .forEach { it.send(Frame.Text(CommandType.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData))) }
+        .forEach { it.send(createMessage(practiceData)) }
 }
+
+fun createMessage(practiceData: PracticeData) =
+    Frame.Text(ClientCommand.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData))
 
 private suspend fun createQuestionState(): QuestionState {
     val thirukkurals = fetchSource()

@@ -51,6 +51,7 @@ val app = functionalComponent<RProps> {
     var gameState by useState(GameState.NONE)
     var activeTopic by useState(Topic.Athikaram)
     var activeQuestion by useState("loading...")
+    var activeKuralQuestion by useState(KuralOnly("Error..", "Error..."))
     var activeKurals by useState(listOf<Thirukkural>())
     var activeShowAnswer by useState(false)
 
@@ -66,6 +67,15 @@ val app = functionalComponent<RProps> {
                         gameState = GameState.PRACTICE
                         activeTopic = practiceData.topic
                         activeQuestion = practiceData.question
+                        activeKurals = practiceData.thirukkurals
+                        activeShowAnswer = false
+                    }
+                    message.startsWith(ClientCommand.PRACTICE_KURAL_RESPONSE.name) -> {
+                        val data = message.removePrefix(ClientCommand.PRACTICE_KURAL_RESPONSE.name)
+                        val practiceData = Json.decodeFromString<PracticeKuralData>(data)
+                        gameState = GameState.PRACTICE
+                        activeTopic = practiceData.topic
+                        activeKuralQuestion = practiceData.question
                         activeKurals = practiceData.thirukkurals
                         activeShowAnswer = false
                     }
@@ -130,6 +140,7 @@ val app = functionalComponent<RProps> {
                 practice {
                     topic = activeTopic
                     question = activeQuestion
+                    kuralQuestion = activeKuralQuestion
                     thirukkurals = activeKurals
                     showAnswer = activeShowAnswer
                     onTopicClick = {

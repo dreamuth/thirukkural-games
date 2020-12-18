@@ -36,11 +36,7 @@ class GameState {
         if (users.containsKey(userSession)) {
             users[userSession]?.roomName?.let { roomName ->
                 roomState[roomName]?.let { questionState ->
-                    val practiceData = PracticeData(
-                        questionState.selectedTopic,
-                        questionState.athikaramState.getCurrent(),
-                        questionState.thirukkurals.filter { it.athikaram == questionState.athikaramState.getCurrent() })
-                    socketSession.send(createMessage(practiceData))
+                    socketSession.send(createPracticeData(questionState))
                 }
             }
         } else {

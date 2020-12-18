@@ -21,6 +21,7 @@ import kotlinx.css.backgroundColor
 import kotlinx.css.color
 import kotlinx.css.height
 import kotlinx.css.px
+import kotlinx.css.rgb
 import kotlinx.html.js.onClickFunction
 import react.RBuilder
 import react.RProps
@@ -40,7 +41,8 @@ private var header = functionalComponent<HeaderProps> { props ->
     styledHeader {
         css {
             classes = mutableListOf("d-flex justify-content-between align-items-center")
-            backgroundColor = Color("#563d7c")
+//            backgroundColor = Color("#563d7c")
+            backgroundColor = rgb(73, 80, 87)
             height = 50.px
         }
         styledLabel {

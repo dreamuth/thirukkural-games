@@ -16,39 +16,46 @@
 
 package com.dreamuth.room
 
-import com.dreamuth.Thirukkural
+import com.dreamuth.KuralOnly
 import kotlinx.css.LinearDimension
+import kotlinx.css.fontSize
 import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
+import styled.css
+import styled.styledDiv
 
-external interface AthikaramProps: RProps {
-    var question: String
+external interface QuestionMultilineProps: RProps {
+    var question: KuralOnly
     var questionSize: LinearDimension
-    var thirukkurals: List<Thirukkural>
-    var showAnswer: Boolean
 }
 
-class Athikaram : RComponent<AthikaramProps, RState>() {
+class QuestionMultiline : RComponent<QuestionMultilineProps, RState>() {
     override fun RBuilder.render() {
-        question {
-            question = props.question
-            questionSize = props.questionSize
-        }
-        if (props.showAnswer) {
-            props.thirukkurals.forEach { thirukkural ->
-                kuralDisplay {
-                    selectedThirukkural = thirukkural
+        styledDiv {
+            css {
+                classes = mutableListOf("card bg-warning m-2 text-center")
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf("card-header")
+                    fontSize = props.questionSize
+                }
+                styledDiv {
+                    +props.question.firstLine
+                }
+                styledDiv {
+                    +props.question.secondLine
                 }
             }
         }
     }
 }
 
-fun RBuilder.athikaram(handler: AthikaramProps.() -> Unit): ReactElement {
-    return child(Athikaram::class) {
+fun RBuilder.questionMultiline(handler: QuestionMultilineProps.() -> Unit): ReactElement {
+    return child(QuestionMultiline::class) {
         this.attrs(handler)
     }
 }

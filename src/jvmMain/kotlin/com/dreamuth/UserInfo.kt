@@ -40,7 +40,9 @@ data class QuestionState(
     var selectedTopic: Topic,
     var thirukkurals: List<Thirukkural>,
     var athikaramState: AthikaramState,
-    var thirukkuralState: ThirukkuralState)
+    var thirukkuralState: ThirukkuralState,
+    var firstWordState: FirstWordState,
+    var lastWordState: LastWordState)
 
 data class AthikaramState(
     override var index: Int,
@@ -48,15 +50,16 @@ data class AthikaramState(
     val athikarams: List<String>
 ) : HistoryState {
     constructor(thirukkurals: List<Thirukkural>) : this(
-        nextIndex(0, thirukkurals.map { it.athikaram }.distinct().size),
+        nextIndex(0, getAthikarams(thirukkurals).size),
         mutableListOf(),
-        thirukkurals.map { it.athikaram }.distinct()
-    )
+        getAthikarams(thirukkurals))
     fun getCurrent(): String = athikarams[index]
     fun goNext() = goNext(athikarams.size)
     fun goPrevious() = goPrevious(athikarams.size)
     fun getReset(): AthikaramState = this.copy(index = getReset(athikarams.size))
 }
+
+private fun getAthikarams(thirukkurals: List<Thirukkural>) = thirukkurals.map { it.athikaram }.distinct()
 
 data class ThirukkuralState(
     override var index: Int,
@@ -70,6 +73,36 @@ data class ThirukkuralState(
     fun getReset(): ThirukkuralState = this.copy(index = getReset(kurals.size))
 }
 
+data class FirstWordState(
+    override var index: Int,
+    override var history: MutableList<Int>,
+    val words: List<String>
+) : HistoryState {
+    constructor(thirukkurals: List<Thirukkural>): this(
+        nextIndex(0, getFirstWords(thirukkurals).size),
+        mutableListOf(),
+        getFirstWords(thirukkurals))
+    fun getCurrent(): String = words[index]
+    fun goNext() = goNext(words.size)
+    fun goPrevious() = goPrevious(words.size)
+}
+
+data class LastWordState(
+    override var index: Int,
+    override var history: MutableList<Int>,
+    val words: List<String>
+) : HistoryState {
+    constructor(thirukkurals: List<Thirukkural>): this(
+        nextIndex(0, getLastWords(thirukkurals).size),
+        mutableListOf(),
+        getLastWords(thirukkurals))
+    fun getCurrent(): String = words[index]
+    fun goNext() = goNext(words.size)
+    fun goPrevious() = goPrevious(words.size)
+}
+
+private fun getFirstWords(thirukkurals: List<Thirukkural>) = thirukkurals.map { it.words.first() }.distinct()
+private fun getLastWords(thirukkurals: List<Thirukkural>) = thirukkurals.map { it.words.last() }.distinct()
 
 interface HistoryState {
     var index: Int

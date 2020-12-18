@@ -16,6 +16,7 @@
 
 package com.dreamuth.room
 
+import com.dreamuth.KuralOnly
 import com.dreamuth.Thirukkural
 import com.dreamuth.Topic
 import kotlinx.css.px
@@ -30,6 +31,7 @@ import styled.styledDiv
 external interface PracticeProps: RProps {
     var topic: Topic
     var question: String
+    var kuralQuestion: KuralOnly
     var thirukkurals: List<Thirukkural>
     var showAnswer: Boolean
     var onTopicClick: (Topic) -> Unit
@@ -58,11 +60,23 @@ private var practice = functionalComponent<PracticeProps> { props ->
         }
     }
 
-    athikaram {
-        question = props.question
-        questionSize = if (props.topic == Topic.Athikaram) 3.rem else 2.rem
-        thirukkurals = props.thirukkurals
-        showAnswer = props.showAnswer
+    when (props.topic) {
+        Topic.Kural -> {
+            kuralQuestion {
+                question = props.kuralQuestion
+                questionSize = 2.rem
+                thirukkurals = props.thirukkurals
+                showAnswer = props.showAnswer
+            }
+        }
+        else -> {
+            stringQuestion {
+                question = props.question
+                questionSize = 2.rem
+                thirukkurals = props.thirukkurals
+                showAnswer = props.showAnswer
+            }
+        }
     }
 }
 

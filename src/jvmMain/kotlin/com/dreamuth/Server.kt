@@ -29,7 +29,6 @@ import io.ktor.sessions.*
 import io.ktor.util.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.html.*
 import kotlinx.serialization.decodeFromString
@@ -184,7 +183,9 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 roomState?.let {
                     when (roomState.selectedTopic) {
                         Topic.Athikaram -> roomState.athikaramState.goNext()
-                        Topic.KuralPorul -> roomState.thirukkuralState.goNext()
+                        Topic.Kural, Topic.KuralPorul -> roomState.thirukkuralState.goNext()
+                        Topic.FirstWord -> roomState.firstWordState.goNext()
+                        Topic.LastWord -> roomState.lastWordState.goNext()
                         else -> println("Error: Invalid next request...")
                     }
                     sendPracticeData(roomState, userInfo.roomName, gameState)
@@ -198,8 +199,9 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 roomState?.let {
                     when (roomState.selectedTopic) {
                         Topic.Athikaram -> roomState.athikaramState.goPrevious()
-                        Topic.KuralPorul -> roomState.thirukkuralState.goPrevious()
-                        else -> println("Error: Invalid next request...")
+                        Topic.Kural, Topic.KuralPorul -> roomState.thirukkuralState.goPrevious()
+                        Topic.FirstWord -> roomState.firstWordState.goPrevious()
+                        Topic.LastWord -> roomState.lastWordState.goPrevious()
                     }
                     sendPracticeData(roomState, userInfo.roomName, gameState)
                 }
@@ -220,44 +222,86 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
 }
 
 suspend fun sendPracticeData(roomState: QuestionState, roomName: String, gameState: GameState) {
-    val question = when (roomState.selectedTopic) {
-        Topic.Athikaram -> roomState.athikaramState.getCurrent()
-        Topic.KuralPorul -> roomState.thirukkuralState.getCurrent().porul
-        else -> "Error..."
-    }
-    val thirukkurals = when (roomState.selectedTopic) {
-        Topic.Athikaram -> roomState.thirukkuralState.kurals.filter { it.athikaram == question }
-        Topic.KuralPorul -> roomState.thirukkuralState.kurals.filter { it.porul == question }
-        else -> listOf()
-    }
-    val practiceData = PracticeData(roomState.selectedTopic, question, thirukkurals)
-    gameState.getSessionsForRoom(roomName).forEach { it.send(createMessage(practiceData)) }
+    val message = createPracticeData(roomState)
+    gameState.getSessionsForRoom(roomName).forEach { it.send(message) }
 }
 
-fun createMessage(practiceData: PracticeData) =
-    Frame.Text(ClientCommand.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData))
-
-private suspend fun createQuestionState(): QuestionState {
-    val thirukkurals = fetchSource()
-    return QuestionState(Topic.Athikaram, thirukkurals, AthikaramState(thirukkurals), ThirukkuralState(thirukkurals))
-}
-
-/**
- * Sends a message to a list of [this] [WebSocketSession].
- */
-suspend fun List<WebSocketSession>.send(frame: Frame) {
-    forEach {
-        try {
-            it.send(frame.copy())
-        } catch (t: Throwable) {
-            try {
-                it.close(CloseReason(CloseReason.Codes.PROTOCOL_ERROR, ""))
-            } catch (ignore: ClosedSendChannelException) {
-                // at some point it will get closed
-            }
+fun createPracticeData(roomState: QuestionState): String {
+    return when (roomState.selectedTopic) {
+        Topic.Athikaram -> {
+            val question = roomState.athikaramState.getCurrent()
+            val thirukkurals = roomState.thirukkuralState.kurals.filter { it.athikaram == question }
+            createMessage(roomState, question, thirukkurals)
+        }
+        Topic.KuralPorul -> {
+            val question = roomState.thirukkuralState.getCurrent().porul
+            val thirukkurals = roomState.thirukkuralState.kurals.filter { it.porul == question }
+            createMessage(roomState, question, thirukkurals)
+        }
+        Topic.FirstWord -> {
+            val question = roomState.firstWordState.getCurrent()
+            val thirukkurals = roomState.thirukkuralState.kurals.filter { it.words.first() == question }
+            createMessage(roomState, question, thirukkurals)
+        }
+        Topic.LastWord -> {
+            val question = roomState.lastWordState.getCurrent()
+            val thirukkurals = roomState.thirukkuralState.kurals.filter { it.words.last() == question }
+            createMessage(roomState, question, thirukkurals)
+        }
+        Topic.Kural -> {
+            val question = roomState.thirukkuralState.getCurrent().kural
+            val thirukkurals = roomState.thirukkuralState.kurals.filter { it.kural == question }
+            createMessage(roomState, question, thirukkurals)
         }
     }
 }
+
+private fun createMessage(
+    roomState: QuestionState,
+    question: String,
+    thirukkurals: List<Thirukkural>
+): String {
+    val practiceData = PracticeData(roomState.selectedTopic, question, thirukkurals)
+    return ClientCommand.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData)
+}
+
+private fun createMessage(
+    roomState: QuestionState,
+    question: KuralOnly,
+    thirukkurals: List<Thirukkural>
+): String {
+    val practiceKuralData = PracticeKuralData(roomState.selectedTopic, question, thirukkurals)
+    return ClientCommand.PRACTICE_KURAL_RESPONSE.name + Json.encodeToString(practiceKuralData)
+}
+
+private suspend fun createQuestionState(): QuestionState {
+    val thirukkurals = fetchSource()
+    return QuestionState(
+        Topic.Athikaram,
+        thirukkurals,
+        AthikaramState(thirukkurals),
+        ThirukkuralState(thirukkurals),
+        FirstWordState(thirukkurals),
+        LastWordState(thirukkurals)
+    )
+}
+
+///**
+// * Sends a message to a list of [this] [WebSocketSession].
+// */
+//suspend fun List<WebSocketSession>.send(frame: Frame) {
+//    forEach {
+//        try {
+//            it.send(frame.copy())
+//        } catch (t: Throwable) {
+//            try {
+//                it.close(CloseReason(CloseReason.Codes.PROTOCOL_ERROR, ""))
+//            } catch (ignore: ClosedSendChannelException) {
+//                // at some point it will get closed
+//            }
+//        }
+//    }
+//}
 
 /**
  * A user session is identified by a unique nonce ID. This nonce comes from a secure random source.

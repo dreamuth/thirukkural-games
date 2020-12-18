@@ -52,6 +52,9 @@ data class KuralOnly(val firstLine: String, val secondLine: String)
 @Serializable
 data class PracticeData(val topic: Topic, val question: String, val thirukkurals: List<Thirukkural>)
 
+@Serializable
+data class PracticeKuralData(val topic: Topic, val question: KuralOnly, val thirukkurals: List<Thirukkural>)
+
 enum class ServerCommand {
     PRACTICE,
     CREATE_ROOM,
@@ -64,6 +67,7 @@ enum class ServerCommand {
 
 enum class ClientCommand {
     PRACTICE_RESPONSE,
+    PRACTICE_KURAL_RESPONSE,
     ADMIN_ROOM_RESPONSE
 }
 
@@ -72,8 +76,7 @@ enum class Topic(val tamil: String) {
     Athikaram("அதிகாரம்"),
     Kural("குறள்"),
     KuralPorul("பொருள்"),
-    LastWord("கடைசி வார்த்தை"),
-    AllKurals("திருக்குறள்");
+    LastWord("கடைசி வார்த்தை");
 
     companion object {
         fun getTopic(tamil: String): Topic {

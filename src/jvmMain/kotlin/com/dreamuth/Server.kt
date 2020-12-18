@@ -35,13 +35,15 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.Duration
+import kotlin.concurrent.timer
 
 @ExperimentalCoroutinesApi
 fun main() {
+    val myPort = System.getenv("PORT")?.toInt() ?: 9090
     embeddedServer(
         Netty,
 //        watchPaths = listOf("thirukkural-games"),
-        port = 9090,
+        port = myPort,
         module = Application::myModule
     ).apply { start(wait = true) }
 }
@@ -120,6 +122,9 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 userType = UserType.PRACTICE)
             val activeUserInfo = gameState.addUserInfo(userInfo)
             val roomState = gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
+//            timer(name = "practiceTimer", daemon = true, period = 1000) {
+//                println("On Timer...")
+//            }
             sendPracticeData(roomState, activeUserInfo.roomName, gameState)
         }
         command.startsWith(ServerCommand.CREATE_ROOM.name) -> {
@@ -186,7 +191,6 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                         Topic.Kural, Topic.KuralPorul -> roomState.thirukkuralState.goNext()
                         Topic.FirstWord -> roomState.firstWordState.goNext()
                         Topic.LastWord -> roomState.lastWordState.goNext()
-                        else -> println("Error: Invalid next request...")
                     }
                     sendPracticeData(roomState, userInfo.roomName, gameState)
                 }

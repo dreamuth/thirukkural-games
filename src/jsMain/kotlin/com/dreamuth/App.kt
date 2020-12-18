@@ -26,12 +26,15 @@ import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import kotlinx.css.height
+import kotlinx.css.pct
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import react.RProps
 import react.functionalComponent
 import react.useEffect
 import react.useState
+import styled.css
 import styled.styledDiv
 
 val scope = MainScope()
@@ -48,7 +51,7 @@ enum class GameState {
 
 val app = functionalComponent<RProps> {
     val text by useState("Loading...")
-    var gameState by useState(GameState.NONE)
+    var gameState by useState(GameState.PRACTICE)
     var activeTopic by useState(Topic.Athikaram)
     var activeQuestion by useState("loading...")
     var activeKuralQuestion by useState(KuralOnly("Error..", "Error..."))
@@ -58,6 +61,7 @@ val app = functionalComponent<RProps> {
     useEffect(listOf()) {
         scope.launch {
             wsClient.initConnection()
+            wsClient.send(ServerCommand.PRACTICE)
             wsClient.receive { message ->
                 println(message)
                 when {
@@ -85,88 +89,94 @@ val app = functionalComponent<RProps> {
     }
 
     styledDiv {
-        header {
-            activeState = gameState
-            onSignOutBtnClick = {
-                gameState = when (gameState) {
-                    GameState.CREATE_OR_JOIN, GameState.PRACTICE, GameState.ADMIN_ROOM -> GameState.NONE
-                    GameState.JOIN, GameState.CREATE -> GameState.CREATE_OR_JOIN
-                    else -> GameState.NONE
-                }
+        styledDiv {
+            css {
+                classes = mutableListOf("alert alert-primary text-center mb-0")
             }
+            +"திருக்குறள் விளையாட்டு"
         }
-        when (gameState) {
-            GameState.NONE -> {
-                gameMode {
-                    onGameBtnClick = {
-                        gameState = GameState.CREATE_OR_JOIN
+        styledDiv {
+            css {
+                classes = mutableListOf("container-lg")
+                height = 100.pct
+            }
+            header {
+                activeState = gameState
+                onSignOutBtnClick = {
+                    gameState = when (gameState) {
+                        GameState.CREATE_OR_JOIN, GameState.PRACTICE, GameState.ADMIN_ROOM -> GameState.NONE
+                        GameState.JOIN, GameState.CREATE -> GameState.CREATE_OR_JOIN
+                        else -> GameState.NONE
                     }
-                    onPracticeBtnClick = {
-                        gameState = GameState.PRACTICE
-                        scope.launch {
-                            wsClient.send(ServerCommand.PRACTICE)
+                }
+            }
+            when (gameState) {
+                GameState.NONE -> {
+                    gameMode {
+                        onGameBtnClick = {
+                            gameState = GameState.CREATE_OR_JOIN
+                        }
+                        onPracticeBtnClick = {
+                            gameState = GameState.PRACTICE
+                            scope.launch {
+                                wsClient.send(ServerCommand.PRACTICE)
+                            }
                         }
                     }
                 }
-            }
-            GameState.CREATE_OR_JOIN -> {
-                createOrJoin {
-                    onCreateBtnClick = {
-                        gameState = GameState.CREATE
-                    }
-                    onJoinBtnClick = {
-                        gameState = GameState.JOIN
-                    }
-                }
-            }
-            GameState.CREATE -> {
-                create {
-                    onCreateBtnClick = {
-                        gameState = GameState.ADMIN_ROOM
-                    }
-                }
-            }
-            GameState.JOIN -> {
-                join {
-                    onJoinBtnClick = {
-                        gameState = GameState.ADMIN_ROOM
-                    }
-                }
-            }
-            GameState.ADMIN_ROOM -> {
-                adminRoom {  }
-            }
-            GameState.PRACTICE -> {
-                practice {
-                    topic = activeTopic
-                    question = activeQuestion
-                    kuralQuestion = activeKuralQuestion
-                    thirukkurals = activeKurals
-                    showAnswer = activeShowAnswer
-                    onTopicClick = {
-                        scope.launch {
-                            wsClient.send(ServerCommand.TOPIC_CHANGE.name + it.name)
+                GameState.CREATE_OR_JOIN -> {
+                    createOrJoin {
+                        onCreateBtnClick = {
+                            gameState = GameState.CREATE
                         }
-                    }
-                    onPreviousClick = {
-                        scope.launch {
-                            wsClient.send(ServerCommand.PREVIOUS)
-                        }
-                    }
-                    onShowAnswerClick = {
-                        activeShowAnswer = it
-                    }
-                    onNextClick = {
-                        scope.launch {
-                            wsClient.send(ServerCommand.NEXT)
+                        onJoinBtnClick = {
+                            gameState = GameState.JOIN
                         }
                     }
                 }
-            }
-            else -> {
-                println("else...")
-                styledDiv {
-                    +text
+                GameState.CREATE -> {
+                    create {
+                        onCreateBtnClick = {
+                            gameState = GameState.ADMIN_ROOM
+                        }
+                    }
+                }
+                GameState.JOIN -> {
+                    join {
+                        onJoinBtnClick = {
+                            gameState = GameState.ADMIN_ROOM
+                        }
+                    }
+                }
+                GameState.ADMIN_ROOM -> {
+                    adminRoom {  }
+                }
+                GameState.PRACTICE -> {
+                    practice {
+                        topic = activeTopic
+                        question = activeQuestion
+                        kuralQuestion = activeKuralQuestion
+                        thirukkurals = activeKurals
+                        showAnswer = activeShowAnswer
+                        onTopicClick = {
+                            scope.launch {
+                                wsClient.send(ServerCommand.TOPIC_CHANGE.name + it.name)
+                            }
+                        }
+                        onPreviousClick = {
+                            scope.launch {
+                                wsClient.send(ServerCommand.PREVIOUS)
+                            }
+                        }
+                        onShowAnswerClick = {
+                            activeShowAnswer = it
+                        }
+                        onNextClick = {
+                            scope.launch {
+                                wsClient.send(ServerCommand.NEXT)
+                            }
+                        }
+                    }
                 }
             }
         }

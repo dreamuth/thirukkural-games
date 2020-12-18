@@ -17,11 +17,15 @@
 package com.dreamuth
 
 import kotlinx.css.Color
+import kotlinx.css.Position
 import kotlinx.css.backgroundColor
 import kotlinx.css.color
 import kotlinx.css.height
+import kotlinx.css.position
 import kotlinx.css.px
 import kotlinx.css.rgb
+import kotlinx.css.right
+import kotlinx.css.top
 import kotlinx.html.js.onClickFunction
 import react.RBuilder
 import react.RProps
@@ -29,6 +33,7 @@ import react.child
 import react.functionalComponent
 import styled.css
 import styled.styledButton
+import styled.styledDiv
 import styled.styledHeader
 import styled.styledLabel
 
@@ -38,24 +43,27 @@ external interface HeaderProps: RProps {
 }
 
 private var header = functionalComponent<HeaderProps> { props ->
-    styledHeader {
-        css {
-            classes = mutableListOf("d-flex justify-content-between align-items-center")
+//    styledHeader {
+//        css {
+//            classes = mutableListOf("d-flex justify-content-between align-items-center")
 //            backgroundColor = Color("#563d7c")
-            backgroundColor = rgb(73, 80, 87)
-            height = 50.px
-        }
-        styledLabel {
-            css {
-                classes = mutableListOf("m-2")
-                color = Color.white
-            }
-            +"திருக்குறள் விளையாட்டு"
-        }
+//            backgroundColor = rgb(73, 80, 87)
+//            height = 50.px
+//        }
+//        styledLabel {
+//            css {
+//                classes = mutableListOf("m-2")
+//                color = Color.white
+//            }
+//            +"திருக்குறள் விளையாட்டு"
+//        }
         if (props.activeState != GameState.NONE) {
             styledButton {
                 css {
-                    classes = mutableListOf("btn btn-outline-warning mr-2")
+                    classes = mutableListOf("btn btn-outline-primary mr-2")
+                    position = Position.absolute
+                    top = 6.px
+                    right = 4.px
                 }
                 attrs {
                     onClickFunction = {
@@ -69,7 +77,7 @@ private var header = functionalComponent<HeaderProps> { props ->
                 +text
             }
         }
-    }
+//    }
 
 }
 

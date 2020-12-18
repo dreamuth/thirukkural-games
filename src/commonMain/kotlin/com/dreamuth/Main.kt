@@ -58,7 +58,8 @@ enum class ServerCommand {
     ADMIN_JOIN_ROOM,
     GUEST_JOIN_ROOM,
     NEXT,
-    PREVIOUS
+    PREVIOUS,
+    TOPIC_CHANGE
 }
 
 enum class ClientCommand {

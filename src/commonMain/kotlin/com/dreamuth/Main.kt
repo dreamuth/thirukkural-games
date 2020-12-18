@@ -58,7 +58,9 @@ enum class CommandType {
     CREATE_ROOM,
     ADMIN_ROOM_RESPONSE,
     ADMIN_JOIN_ROOM,
-    GUEST_JOIN_ROOM
+    GUEST_JOIN_ROOM,
+    NEXT,
+    PREVIOUS
 }
 
 enum class Topic(val tamil: String) {

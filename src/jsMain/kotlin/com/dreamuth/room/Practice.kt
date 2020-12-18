@@ -31,27 +31,29 @@ external interface PracticeProps: RProps {
     var question: String
     var thirukkurals: List<Thirukkural>
     var showAnswer: Boolean
+    var onTopicClick: (Topic) -> Unit
+    var onPreviousClick: () -> Unit
     var onShowAnswerClick: (Boolean) -> Unit
+    var onNextClick: () -> Unit
 }
 
 private var practice = functionalComponent<PracticeProps> { props ->
     styledDiv {
         // Desktop
         css {
-            classes = mutableListOf("d-none d-lg-block")
+//            classes = mutableListOf("d-none d-lg-block")
         }
         titleBar {
             selectedTopic = props.topic
-            firstRowStyle = "d-flex justify-content-between align-items-center"
-            personButtonWidth = 200.px
+            firstRowStyle = "d-flex justify-content-between align-items-center p-0"
             topicButtonWidth = 200.px
             secondRowStyle = "col-md-auto pr-0"
             navigationWidth = 120.px
             navigationBtnWidth = 120.px
-//            onTopicClick = { it -> props.onTopicClick(it) }
-//            onPreviousClick = props.onPreviousClick
+            onTopicClick = { it -> props.onTopicClick(it) }
+            onPreviousClick = props.onPreviousClick
             onShowAnswerClick = { it -> props.onShowAnswerClick(it) }
-//            onNextClick = { props.onNextClick() }
+            onNextClick = { props.onNextClick() }
         }
     }
 

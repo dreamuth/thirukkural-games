@@ -68,7 +68,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
         styledDiv {
             styledButton {
                 css {
-                    classes = mutableListOf("btn btn-success me-2 p-0")
+                    classes = mutableListOf("btn btn-success me-2")
                     width = props.buttonSize
                 }
                 attrs {
@@ -77,9 +77,6 @@ class Navigation : RComponent<NavigationProps, RState>() {
                     }
                 }
                 +"முன்பு"
-//            styledImg {
-//                attrs.src = "back.svg"
-//            }
             }
             styledButton {
                 css {
@@ -95,7 +92,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
             }
             styledButton {
                 css {
-                    classes = mutableListOf("btn btn-success p-0")
+                    classes = mutableListOf("btn btn-success")
                     width = props.buttonSize
                 }
                 attrs {

@@ -37,12 +37,12 @@ data class UserInfo(
     val adminPasscode: String? = null)
 
 data class QuestionState(
-    val selectedTopic: Topic,
+    var selectedTopic: Topic,
     var thirukkurals: List<Thirukkural>,
     var athikaramState: AthikaramState)
 
 data class AthikaramState(
-    override val index: Int,
+    override var index: Int,
     override var history: MutableList<Int>,
     val athikarams: List<String>
 ) : HistoryState {
@@ -52,8 +52,8 @@ data class AthikaramState(
         thirukkurals.map { it.athikaram }.distinct()
     )
     fun getCurrent(): String = athikarams[index]
-    fun getNext(): AthikaramState = this.copy(index = getNext(athikarams.size))
-    fun getPrevious(): AthikaramState = this.copy(index = getPrevious(athikarams.size))
+    fun goNext() { index = getNext(athikarams.size) }
+    fun goPrevious() { index = getPrevious(athikarams.size) }
     fun getReset(): AthikaramState = this.copy(index = getReset(athikarams.size))
 }
 

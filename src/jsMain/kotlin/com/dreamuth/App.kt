@@ -61,30 +61,21 @@ val app = functionalComponent<RProps> {
             wsClient.initConnection()
             wsClient.receive { message ->
                 println(message)
-                if (message.contains("Hi from server")) {
-                    text = "Yet to be created"
-                } else {
-                    when {
-                        message.startsWith(CommandType.PRACTICE_RESPONSE.name) -> {
-                            val data = message.removePrefix(CommandType.PRACTICE_RESPONSE.name)
-                            val practiceData = Json.decodeFromString<PracticeData>(data)
-                            selectedTopic = practiceData.topic
-                            athikaramQuestion = practiceData.question
-                            athikaramThirukkurals = practiceData.thirukkurals
-                            athikaramShowAnswer = false
-                        }
+                when {
+                    message.startsWith(CommandType.PRACTICE_RESPONSE.name) -> {
+                        val data = message.removePrefix(CommandType.PRACTICE_RESPONSE.name)
+                        val practiceData = Json.decodeFromString<PracticeData>(data)
+                        selectedTopic = practiceData.topic
+                        athikaramQuestion = practiceData.question
+                        athikaramThirukkurals = practiceData.thirukkurals
+                        athikaramShowAnswer = false
                     }
-//                    val data: WSData = Json.decodeFromString(message)
-//                    println(data)
                 }
             }
         }
     }
 
     styledDiv {
-        css {
-//            height = 100.pct
-        }
         header {
             activeState = gameState
             onSignOutBtnClick = {
@@ -142,8 +133,21 @@ val app = functionalComponent<RProps> {
                     question = athikaramQuestion
                     thirukkurals = athikaramThirukkurals
                     showAnswer = athikaramShowAnswer
+                    onTopicClick = {
+
+                    }
+                    onPreviousClick = {
+                        scope.launch {
+                            wsClient.send(CommandType.PREVIOUS.name)
+                        }
+                    }
                     onShowAnswerClick = {
-                        athikaramShowAnswer = !athikaramShowAnswer
+                        athikaramShowAnswer = it
+                    }
+                    onNextClick = {
+                        scope.launch {
+                            wsClient.send(CommandType.NEXT.name)
+                        }
                     }
                 }
             }

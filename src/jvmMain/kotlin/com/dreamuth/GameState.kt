@@ -38,10 +38,32 @@ class GameState {
     fun userLeft(userSession: UserSession, serverSession: WebSocketServerSession) {
         val socketSessions = sessions[userSession]
         socketSessions?.remove(serverSession)
+        socketSessions?.let {
+            if (socketSessions.isEmpty()) {
+                val userInfo = users.remove(userSession)
+                userInfo?.let {
+                    println("Removing user session ${userInfo.userSession}")
+                    if (users.values.none { it.roomName == userInfo.roomName }) {
+                        val questionState = roomState.remove(userInfo.roomName)
+                        questionState?.let {
+                            println("Removing room ${userInfo.roomName}")
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    fun addUserInfo(userInfo: UserInfo) {
-        users.putIfAbsent(userInfo.userSession, userInfo)
+    fun addUserInfo(userInfo: UserInfo): UserInfo {
+        val result = users.putIfAbsent(userInfo.userSession, userInfo)
+        if (result != null) {
+            println("session already exists, ${userInfo.userSession}")
+        }
+        return result ?: userInfo
+    }
+
+    fun getUserInfo(userSession: UserSession): UserInfo? {
+        return users[userSession]
     }
 
     fun createRoomName(): String {
@@ -56,7 +78,7 @@ class GameState {
 
     private fun getRandomString(): String {
         val charset = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        return (1..12).map { charset.random() }.joinToString { "" }
+        return (1..12).map { charset.random() }.joinToString("")
     }
 
     fun createAdminPasscode(): String {
@@ -69,7 +91,7 @@ class GameState {
 
     private fun getRandomNumber(length: Int): String {
         val charset = ('0'..'9')
-        return (1..length).map { charset.random() }.joinToString { "" }
+        return (1..length).map { charset.random() }.joinToString("")
     }
 
     fun isValidAdmin(adminJoinRoom: AdminJoinRoom): Boolean {
@@ -92,12 +114,16 @@ class GameState {
             .first()!!
     }
 
-    fun addRoomState(roomName: String, questionState: QuestionState) {
-        roomState.putIfAbsent(roomName, questionState)
+    fun addRoomState(roomName: String, questionState: QuestionState): QuestionState {
+        val result = roomState.putIfAbsent(roomName, questionState)
+        if (result != null) {
+            println("RoomState already exists for room, $roomName")
+        }
+        return result ?: questionState
     }
 
-    fun getRoomState(roomName: String): QuestionState {
-        return roomState[roomName]!!
+    fun getRoomState(roomName: String): QuestionState? {
+        return roomState[roomName]
     }
 
 }

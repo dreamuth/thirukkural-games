@@ -50,7 +50,7 @@ class WsClient(private val client: HttpClient) {
         session = client.webSocketSession(
             method = HttpMethod.Get,
             host = window.location.hostname,
-            port = window.location.port.toInt(),
+            port = 9090,
             path = "/ws"
         )
     }

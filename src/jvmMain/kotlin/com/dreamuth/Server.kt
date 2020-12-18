@@ -94,19 +94,18 @@ fun Application.myModule() {
                 close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "No session"))
                 return@webSocket
             }
-            println("client connected...")
-            send(Frame.Text("Hi from server"))
-            val wsData = WSData(questionType = "Athikaram", question = "tamil")
-            send(Frame.Text(Json.encodeToString(wsData)))
+            println("client $session connected...")
+            send(Frame.Text("Welcome $session"))
             gameState.userJoin(session, this)
             try {
                 incoming.consumeEach { frame ->
                     if (frame is Frame.Text) {
-                        println("Client said: ${frame.readText()}")
+                        println("Client $session said: ${frame.readText()}")
                         processRequest(gameState, session, this, frame.readText())
-                    } else (frame is Frame.Binary)
+                    }
                 }
             } finally {
+                println("client $session disconnected...")
                 gameState.userLeft(session, this)
             }
         }
@@ -122,13 +121,8 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 roomName = gameState.createRoomName(),
                 userType = UserType.PRACTICE)
             gameState.addUserInfo(userInfo)
-            gameState.addRoomState(userInfo.roomName, createQuestionState())
-            val roomState = gameState.getRoomState(userInfo.roomName)
-            val practiceData = PracticeData(
-                Topic.Athikaram,
-                roomState.athikaramState.getCurrent(),
-                roomState.thirukkurals.filter { it.athikaram == roomState.athikaramState.getCurrent() })
-            socketSession.send(Frame.Text(CommandType.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData)))
+            val roomState = gameState.addRoomState(userInfo.roomName, createQuestionState())
+            sendPracticeData(roomState, socketSession)
         }
         command.startsWith(CommandType.CREATE_ROOM.name) -> {
             val data = command.removePrefix(CommandType.CREATE_ROOM.name)
@@ -184,7 +178,35 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 gameState.addUserInfo(userInfo)
             }
         }
+        command.startsWith(CommandType.NEXT.name) -> {
+            val userInfo = gameState.getUserInfo(userSession)
+            userInfo?.let {
+                val roomState = gameState.getRoomState(userInfo.roomName)
+                roomState?.let {
+                    roomState.athikaramState.goNext()
+                    sendPracticeData(roomState, socketSession)
+                }
+            }
+        }
+        command.startsWith(CommandType.PREVIOUS.name) -> {
+            val userInfo = gameState.getUserInfo(userSession)
+            userInfo?.let {
+                val roomState = gameState.getRoomState(userInfo.roomName)
+                roomState?.let {
+                    roomState.athikaramState.goPrevious()
+                    sendPracticeData(roomState, socketSession)
+                }
+            }
+        }
     }
+}
+
+private suspend fun sendPracticeData(roomState: QuestionState, socketSession: WebSocketSession) {
+    val practiceData = PracticeData(
+        roomState.selectedTopic,
+        roomState.athikaramState.getCurrent(),
+        roomState.thirukkurals.filter { it.athikaram == roomState.athikaramState.getCurrent() })
+    socketSession.send(Frame.Text(CommandType.PRACTICE_RESPONSE.name + Json.encodeToString(practiceData)))
 }
 
 private suspend fun createQuestionState(): QuestionState {

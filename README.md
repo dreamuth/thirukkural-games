@@ -1,2 +1,2 @@
-# thirukkural-games
+# Thirukkural-games
 Kids game site based on thirukkural

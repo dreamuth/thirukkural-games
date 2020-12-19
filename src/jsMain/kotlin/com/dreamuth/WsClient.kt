@@ -47,6 +47,7 @@ class WsClient(private val client: HttpClient) {
 
 
     private suspend fun connect() {
+        println("Connecting to host: ${window.location.hostname}, port: ${window.location.port} ")
         session = client.webSocketSession(
             method = HttpMethod.Get,
             host = window.location.hostname,

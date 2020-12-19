@@ -35,7 +35,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.Duration
-import kotlin.concurrent.timer
 
 @ExperimentalCoroutinesApi
 fun main() {
@@ -115,17 +114,13 @@ fun Application.myModule() {
 suspend fun processRequest(gameState: GameState, userSession: UserSession, socketSession: WebSocketSession, command: String) {
     when {
         command.startsWith(ServerCommand.PRACTICE.name) -> {
-            val userInfo = UserInfo(
-                userSession = userSession,
-                socketSession = socketSession,
-                roomName = gameState.createRoomName(),
-                userType = UserType.PRACTICE)
-            val activeUserInfo = gameState.addUserInfo(userInfo)
-            val roomState = gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
+            val userInfo = gameState.getUserInfo(userSession)
+                ?: gameState.addUserInfo(createUserInfo(userSession, socketSession, gameState))
+            val roomState = gameState.addRoomState(userInfo.roomName, createQuestionState())
 //            timer(name = "practiceTimer", daemon = true, period = 1000) {
 //                println("On Timer...")
 //            }
-            sendPracticeData(roomState, activeUserInfo.roomName, gameState)
+            sendPracticeData(roomState, userInfo.roomName, gameState)
         }
         command.startsWith(ServerCommand.CREATE_ROOM.name) -> {
             val data = command.removePrefix(ServerCommand.CREATE_ROOM.name)
@@ -225,8 +220,20 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
     }
 }
 
+private fun createUserInfo(
+    userSession: UserSession,
+    socketSession: WebSocketSession,
+    gameState: GameState
+) = UserInfo(
+    userSession = userSession,
+    socketSession = socketSession,
+    roomName = gameState.createPracticeRoom(),
+    userType = UserType.PRACTICE
+)
+
 suspend fun sendPracticeData(roomState: QuestionState, roomName: String, gameState: GameState) {
     val message = createPracticeData(roomState)
+    println("Sending practice data to room [$roomName]")
     gameState.getSessionsForRoom(roomName).forEach { it.send(message) }
 }
 

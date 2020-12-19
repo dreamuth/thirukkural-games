@@ -20,12 +20,14 @@ import io.ktor.http.cio.websocket.*
 import io.ktor.websocket.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  *
  * @author Uttran Ishtalingam
  */
 class GameState {
+    private val practiceRoomNo = AtomicLong(0)
     private val roomState = ConcurrentHashMap<String, QuestionState>()
     private val users = ConcurrentHashMap<UserSession, UserInfo>()
     private val sessions = ConcurrentHashMap<UserSession, MutableList<WebSocketSession>>()
@@ -36,6 +38,7 @@ class GameState {
         if (users.containsKey(userSession)) {
             users[userSession]?.roomName?.let { roomName ->
                 roomState[roomName]?.let { questionState ->
+                    println("Adding $userSession to room [$roomName]")
                     socketSession.send(createPracticeData(questionState))
                 }
             }
@@ -73,6 +76,10 @@ class GameState {
 
     fun getUserInfo(userSession: UserSession): UserInfo? {
         return users[userSession]
+    }
+
+    fun createPracticeRoom(): String {
+        return "Practice-" + practiceRoomNo.getAndIncrement()
     }
 
     fun createRoomName(): String {

@@ -158,13 +158,14 @@ fun nextIndex(currentIndex: Int, maxIndex: Int): Int {
     return newIndex
 }
 
-suspend fun fetchSource(): List<Thirukkural> {
-    val sourceUrl = "https://raw.githubusercontent.com/dreamuth/dreamuth.github.io/master/kurals.txt"
-    val client = HttpClient(CIO)
-    val sourceData = client.get<String>(sourceUrl)
+fun fetchSource(): List<Thirukkural> {
+    val sourceData = Thirukkural::class.java.classLoader.getResource("kurals.txt")!!.readText()
+//    val sourceUrl = "https://raw.githubusercontent.com/dreamuth/dreamuth.github.io/master/kurals.txt"
+//    val client = HttpClient(CIO)
+//    val sourceData = client.get<String>(sourceUrl)
     val thirukkurals = readSource(sourceData)
-    println("version: 2020-12-15.2")
-    println("Source: $sourceUrl loaded")
+    println("version: 2020-12-19.1")
+//    println("Source: $sourceUrl loaded")
     return thirukkurals
 }
 

@@ -50,7 +50,7 @@ class WsClient(private val client: HttpClient) {
         println("Connecting to host: ${window.location.hostname}, port: ${window.location.port} ")
         session = client.webSocketSession(
             method = HttpMethod.Get,
-            host = window.location.hostname.replace("https", "wss"),
+            host = "wss://" + window.location.hostname,
 //            port = window.location.port.toInt(),
             path = "/ws"
         )

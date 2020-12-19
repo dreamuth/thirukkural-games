@@ -63,12 +63,12 @@ class WsClient(private val client: HttpClient) {
 //        )
     }
 
-    suspend fun send(message: String) {
-        session?.send(Frame.Text(message))
+    suspend fun trySend(command: ServerCommand) {
+        trySend(command.name)
     }
 
-    suspend fun send(command: ServerCommand) {
-        session?.send(Frame.Text(command.name))
+    suspend fun trySend(message: String) {
+        session?.trySend(message)
     }
 
     suspend fun receive(onReceive: (input: String) -> Unit) {

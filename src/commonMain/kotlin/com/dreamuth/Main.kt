@@ -16,12 +16,9 @@
 
 package com.dreamuth
 
+import io.ktor.http.cio.websocket.*
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.serialization.Serializable
-
-@Serializable
-data class WSData(
-    val questionType: String?,
-    val question: String?)
 
 @Serializable
 data class CreateRoom(val roomName: String)
@@ -81,6 +78,18 @@ enum class Topic(val tamil: String) {
     companion object {
         fun getTopic(tamil: String): Topic {
             return values().first { it.tamil == tamil }
+        }
+    }
+}
+
+suspend fun WebSocketSession.trySend(message: String) {
+    try {
+        send(message)
+    } catch (t: Throwable) {
+        try {
+            close(CloseReason(CloseReason.Codes.PROTOCOL_ERROR, "Failed to send message"))
+        } catch (ignore: ClosedSendChannelException) {
+            println("at some point it will get closed")
         }
     }
 }

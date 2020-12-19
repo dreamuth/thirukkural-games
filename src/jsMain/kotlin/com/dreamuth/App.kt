@@ -50,7 +50,6 @@ enum class GameState {
 }
 
 val app = functionalComponent<RProps> {
-    val text by useState("Loading...")
     var gameState by useState(GameState.PRACTICE)
     var activeTopic by useState(Topic.Athikaram)
     var activeQuestion by useState("loading...")
@@ -61,7 +60,7 @@ val app = functionalComponent<RProps> {
     useEffect(listOf()) {
         scope.launch {
             wsClient.initConnection()
-            wsClient.send(ServerCommand.PRACTICE)
+            wsClient.trySend(ServerCommand.PRACTICE)
             wsClient.receive { message ->
                 println(message)
                 when {
@@ -119,7 +118,7 @@ val app = functionalComponent<RProps> {
                         onPracticeBtnClick = {
                             gameState = GameState.PRACTICE
                             scope.launch {
-                                wsClient.send(ServerCommand.PRACTICE)
+                                wsClient.trySend(ServerCommand.PRACTICE)
                             }
                         }
                     }
@@ -160,12 +159,12 @@ val app = functionalComponent<RProps> {
                         showAnswer = activeShowAnswer
                         onTopicClick = {
                             scope.launch {
-                                wsClient.send(ServerCommand.TOPIC_CHANGE.name + it.name)
+                                wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
                             }
                         }
                         onPreviousClick = {
                             scope.launch {
-                                wsClient.send(ServerCommand.PREVIOUS)
+                                wsClient.trySend(ServerCommand.PREVIOUS)
                             }
                         }
                         onShowAnswerClick = {
@@ -173,7 +172,7 @@ val app = functionalComponent<RProps> {
                         }
                         onNextClick = {
                             scope.launch {
-                                wsClient.send(ServerCommand.NEXT)
+                                wsClient.trySend(ServerCommand.NEXT)
                             }
                         }
                     }

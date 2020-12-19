@@ -39,11 +39,11 @@ class GameState {
             users[userSession]?.roomName?.let { roomName ->
                 roomState[roomName]?.let { questionState ->
                     println("Adding $userSession to room [$roomName]")
-                    socketSession.send(createPracticeData(questionState))
+                    socketSession.trySend(createPracticeData(questionState))
                 }
             }
         } else {
-            socketSession.send(Frame.Text("Welcome $userSession"))
+            socketSession.trySend("Welcome $userSession")
         }
     }
 

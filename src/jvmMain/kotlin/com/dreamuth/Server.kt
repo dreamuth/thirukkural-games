@@ -135,15 +135,15 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
             val activeUserInfo = gameState.addUserInfo(userInfo)
             gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
             val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode!!)
-            socketSession.send(Frame.Text(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response)))
+            socketSession.trySend(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response))
         }
         command.startsWith(ServerCommand.ADMIN_JOIN_ROOM.name) -> {
             val data = command.removePrefix(ServerCommand.ADMIN_JOIN_ROOM.name)
             val adminJoinRoom = Json.decodeFromString<AdminJoinRoom>(data)
             if (!gameState.isExistingRoom(adminJoinRoom.roomName)) {
-                socketSession.send(Frame.Text("ERROR: Invalid room name"))
+                socketSession.trySend("ERROR: Invalid room name")
             } else if (!gameState.isValidAdmin(adminJoinRoom)) {
-                socketSession.send(Frame.Text("ERROR: Invalid passcode"))
+                socketSession.trySend("ERROR: Invalid passcode")
             } else {
                 val userInfo = UserInfo(
                     userSession = userSession,
@@ -155,16 +155,16 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 )
                 gameState.addUserInfo(userInfo)
                 val response = AdminRoomResponse(userInfo.adminPasscode!!, userInfo.guestPasscode!!)
-                socketSession.send(Frame.Text(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response)))
+                socketSession.trySend(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response))
             }
         }
         command.startsWith(ServerCommand.GUEST_JOIN_ROOM.name) -> {
             val data = command.removePrefix(ServerCommand.GUEST_JOIN_ROOM.name)
             val guestJoinRoom = Json.decodeFromString<GuestJoinRoom>(data)
             if (!gameState.isExistingRoom(guestJoinRoom.roomName)) {
-                socketSession.send(Frame.Text("ERROR: Invalid room name"))
+                socketSession.trySend("ERROR: Invalid room name")
             } else if (!gameState.isValidGuest(guestJoinRoom)) {
-                socketSession.send(Frame.Text("ERROR: Invalid passcode"))
+                socketSession.trySend("ERROR: Invalid passcode")
             } else {
                 val userInfo = UserInfo(
                     userSession = userSession,
@@ -234,7 +234,7 @@ private fun createUserInfo(
 suspend fun sendPracticeData(roomState: QuestionState, roomName: String, gameState: GameState) {
     val message = createPracticeData(roomState)
     println("Sending practice data to room [$roomName]")
-    gameState.getSessionsForRoom(roomName).forEach { it.send(message) }
+    gameState.getSessionsForRoom(roomName).forEach { it.trySend(message) }
 }
 
 fun createPracticeData(roomState: QuestionState): String {
@@ -285,7 +285,7 @@ private fun createMessage(
     return ClientCommand.PRACTICE_KURAL_RESPONSE.name + Json.encodeToString(practiceKuralData)
 }
 
-private suspend fun createQuestionState(): QuestionState {
+private fun createQuestionState(): QuestionState {
     val thirukkurals = fetchSource()
     return QuestionState(
         Topic.Athikaram,
@@ -296,23 +296,6 @@ private suspend fun createQuestionState(): QuestionState {
         LastWordState(thirukkurals)
     )
 }
-
-///**
-// * Sends a message to a list of [this] [WebSocketSession].
-// */
-//suspend fun List<WebSocketSession>.send(frame: Frame) {
-//    forEach {
-//        try {
-//            it.send(frame.copy())
-//        } catch (t: Throwable) {
-//            try {
-//                it.close(CloseReason(CloseReason.Codes.PROTOCOL_ERROR, ""))
-//            } catch (ignore: ClosedSendChannelException) {
-//                // at some point it will get closed
-//            }
-//        }
-//    }
-//}
 
 /**
  * A user session is identified by a unique nonce ID. This nonce comes from a secure random source.

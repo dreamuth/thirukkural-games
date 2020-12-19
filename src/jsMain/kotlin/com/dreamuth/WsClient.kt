@@ -18,6 +18,7 @@ package com.dreamuth
 
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
+import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import kotlinx.browser.window
@@ -48,12 +49,18 @@ class WsClient(private val client: HttpClient) {
 
     private suspend fun connect() {
         println("Connecting to host: ${window.location.hostname}, port: ${window.location.port} ")
-        session = client.webSocketSession(
-            method = HttpMethod.Get,
-            host = "wss://" + window.location.hostname,
+        val scheme = if (window.location.hostname == "localhost") "ws" else "wss"
+        val port = if (window.location.hostname == "localhost") 9090 else 0
+        session = client.webSocketSession {
+            this.method = HttpMethod.Get
+            url(scheme, window.location.hostname, port, "/ws")
+        }
+//        session = client.webSocketSession(
+//            method = HttpMethod.Get,
+//            host = "wss://" + window.location.hostname,
 //            port = window.location.port.toInt(),
-            path = "/ws"
-        )
+//            path = "/ws"
+//        )
     }
 
     suspend fun send(message: String) {

@@ -42,7 +42,6 @@ class KuralQuestion : RComponent<KuralQuestionProps, RState>() {
             props.thirukkurals.forEach { thirukkural ->
                 kuralDisplay {
                     selectedThirukkural = thirukkural
-                    showPorul = true
                 }
             }
         }

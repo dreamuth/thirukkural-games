@@ -29,7 +29,6 @@ import styled.styledSmall
 
 external interface KuralDisplayProps: RProps {
     var selectedThirukkural: Thirukkural
-    var showPorul: Boolean
 }
 
 class KuralDisplay : RComponent<KuralDisplayProps, RState>() {
@@ -61,26 +60,28 @@ class KuralDisplay : RComponent<KuralDisplayProps, RState>() {
                 css {
                     classes = mutableListOf("card-body")
                 }
-                if (props.showPorul) {
-                    styledP {
-                        css {
-                            classes = mutableListOf("card-text")
-                        }
-                        +props.selectedThirukkural.porul
+                styledP {
+                    css {
+                        classes = mutableListOf("card-text")
                     }
-                } else {
-                    styledP {
-                        css {
-                            classes = mutableListOf("card-text")
-                        }
-                        +props.selectedThirukkural.kural.firstLine
+                    +props.selectedThirukkural.kural.firstLine
+                }
+                styledP {
+                    css {
+                        classes = mutableListOf("card-text")
                     }
-                    styledP {
-                        css {
-                            classes = mutableListOf("card-text")
-                        }
-                        +props.selectedThirukkural.kural.secondLine
+                    +props.selectedThirukkural.kural.secondLine
+                }
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf("card-footer")
+                }
+                styledP {
+                    css {
+                        classes = mutableListOf("card-text")
                     }
+                    +props.selectedThirukkural.porul
                 }
             }
         }

@@ -41,7 +41,6 @@ class StringQuestion : RComponent<StringQuestionProps, RState>() {
             props.thirukkurals.forEach { thirukkural ->
                 kuralDisplay {
                     selectedThirukkural = thirukkural
-                    showPorul = false
                 }
             }
         }

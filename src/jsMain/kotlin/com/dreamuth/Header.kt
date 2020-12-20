@@ -43,20 +43,6 @@ external interface HeaderProps: RProps {
 }
 
 private var header = functionalComponent<HeaderProps> { props ->
-//    styledHeader {
-//        css {
-//            classes = mutableListOf("d-flex justify-content-between align-items-center")
-//            backgroundColor = Color("#563d7c")
-//            backgroundColor = rgb(73, 80, 87)
-//            height = 50.px
-//        }
-//        styledLabel {
-//            css {
-//                classes = mutableListOf("m-2")
-//                color = Color.white
-//            }
-//            +"திருக்குறள் விளையாட்டு"
-//        }
         if (props.activeState != GameState.NONE) {
             styledButton {
                 css {

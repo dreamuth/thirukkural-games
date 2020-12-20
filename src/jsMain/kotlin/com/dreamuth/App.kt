@@ -16,16 +16,15 @@
 
 package com.dreamuth
 
-import com.dreamuth.login.create
-import com.dreamuth.login.createOrJoin
 import com.dreamuth.login.gameMode
-import com.dreamuth.login.join
 import com.dreamuth.room.adminRoom
 import com.dreamuth.room.practice
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import kotlinx.css.Color
+import kotlinx.css.backgroundColor
 import kotlinx.css.height
 import kotlinx.css.pct
 import kotlinx.serialization.decodeFromString
@@ -50,7 +49,7 @@ enum class GameState {
 }
 
 val app = functionalComponent<RProps> {
-    var gameState by useState(GameState.PRACTICE)
+    var gameState by useState(GameState.NONE)
     var activeTopic by useState(Topic.Athikaram)
     var activeQuestion by useState("loading...")
     var activeKuralQuestion by useState(KuralOnly("Error..", "Error..."))
@@ -60,7 +59,6 @@ val app = functionalComponent<RProps> {
     useEffect(listOf()) {
         scope.launch {
             wsClient.initConnection()
-            wsClient.trySend(ServerCommand.PRACTICE)
             wsClient.receive { message ->
                 println(message)
                 when {
@@ -88,16 +86,19 @@ val app = functionalComponent<RProps> {
     }
 
     styledDiv {
+        css {
+            height = 100.pct
+            backgroundColor = Color("#f5f5f5")
+        }
         styledDiv {
             css {
-                classes = mutableListOf("alert alert-primary text-center mb-0")
+                classes = mutableListOf("alert alert-primary text-center mb-0 rounded-0")
             }
             +"திருக்குறள் விளையாட்டு"
         }
         styledDiv {
             css {
                 classes = mutableListOf("container-lg")
-                height = 100.pct
             }
             header {
                 activeState = gameState
@@ -117,33 +118,10 @@ val app = functionalComponent<RProps> {
                         }
                         onPracticeBtnClick = {
                             gameState = GameState.PRACTICE
+                            println("sending Practice...")
                             scope.launch {
                                 wsClient.trySend(ServerCommand.PRACTICE)
                             }
-                        }
-                    }
-                }
-                GameState.CREATE_OR_JOIN -> {
-                    createOrJoin {
-                        onCreateBtnClick = {
-                            gameState = GameState.CREATE
-                        }
-                        onJoinBtnClick = {
-                            gameState = GameState.JOIN
-                        }
-                    }
-                }
-                GameState.CREATE -> {
-                    create {
-                        onCreateBtnClick = {
-                            gameState = GameState.ADMIN_ROOM
-                        }
-                    }
-                }
-                GameState.JOIN -> {
-                    join {
-                        onJoinBtnClick = {
-                            gameState = GameState.ADMIN_ROOM
                         }
                     }
                 }
@@ -177,6 +155,7 @@ val app = functionalComponent<RProps> {
                         }
                     }
                 }
+                else -> println("Error state...")
             }
         }
     }

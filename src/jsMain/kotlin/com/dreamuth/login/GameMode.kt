@@ -16,18 +16,17 @@
 
 package com.dreamuth.login
 
-import kotlinx.css.height
-import kotlinx.css.minWidth
-import kotlinx.css.pct
-import kotlinx.css.px
-import kotlinx.html.js.onClickFunction
+import com.dreamuth.GameState
+import kotlinx.html.role
 import react.RBuilder
 import react.RProps
 import react.child
 import react.functionalComponent
+import react.useState
 import styled.css
-import styled.styledButton
 import styled.styledDiv
+import styled.styledImg
+import styled.styledUl
 
 external interface GameModeProps: RProps {
     var onGameBtnClick: () -> Unit
@@ -35,34 +34,76 @@ external interface GameModeProps: RProps {
 }
 
 private var gameMode = functionalComponent<GameModeProps> { props ->
+    var gameState by useState(GameState.CREATE)
+
     styledDiv {
         css {
-            classes = mutableListOf("d-flex justify-content-center align-items-center flex-column")
-            height = 100.pct
+            classes = mutableListOf("container py-5")
         }
-        styledButton {
+        styledDiv {
             css {
-                classes = mutableListOf("btn btn-primary btn-lg m-2")
-                minWidth = 200.px
+                classes = mutableListOf("row")
             }
-            attrs {
-                onClickFunction = {
-                    props.onGameBtnClick()
+            styledDiv {
+                css {
+                    classes = mutableListOf("col-lg-7 mx-auto")
+                }
+                styledDiv {
+                    css {
+                        classes = mutableListOf("bg-white rounded-lg shadow-sm p-5")
+                    }
+                    styledDiv {
+                        css {
+                            classes = mutableListOf("d-flex justify-content-center align-items-center pb-5")
+                        }
+                        styledImg {
+                            attrs.src = "img/sangam_logo.png"
+                        }
+                    }
+                    styledUl {
+                        css {
+                            classes = mutableListOf("nav bg-light nav-pills rounded-pill nav-fill mb-3")
+                            attrs {
+                                role = "tablist"
+                            }
+                        }
+                        linkItem {
+                            name = "Create Room"
+                            isActive = gameState == GameState.CREATE
+                            onClickFunction = {
+                                gameState = GameState.CREATE
+                            }
+                        }
+                        linkItem {
+                            name = "Join Room"
+                            isActive = gameState == GameState.JOIN
+                            onClickFunction = {
+                                gameState = GameState.JOIN
+                            }
+                        }
+                    }
+                    styledDiv {
+                        css {
+                            classes = mutableListOf("tab-content")
+                        }
+                        when (gameState) {
+                            GameState.CREATE -> {
+                                createRoom {
+                                    onCreateBtnClick = props.onPracticeBtnClick
+                                }
+                            }
+                            GameState.JOIN -> {
+                                joinRoom {
+                                    onJoinBtnClick = props.onPracticeBtnClick
+                                }
+                            }
+                            else -> {
+                                println("Error state...")
+                            }
+                        }
+                    }
                 }
             }
-            +"Game"
-        }
-        styledButton {
-            css {
-                classes = mutableListOf("btn btn-primary btn-lg m-2")
-                minWidth = 200.px
-            }
-            attrs {
-                onClickFunction = {
-                    props.onPracticeBtnClick()
-                }
-            }
-            +"Practice"
         }
     }
 }

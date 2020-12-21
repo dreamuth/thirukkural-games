@@ -125,17 +125,20 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
         command.startsWith(ServerCommand.CREATE_ROOM.name) -> {
             val data = command.removePrefix(ServerCommand.CREATE_ROOM.name)
             val createRoom = Json.decodeFromString<CreateRoom>(data)
-            val userInfo = UserInfo(
-                userSession = userSession,
-                socketSession = socketSession,
-                roomName = createRoom.roomName,
-                userType = UserType.ADMIN,
-                adminPasscode = gameState.createAdminPasscode(),
-                guestPasscode = gameState.createGuestPasscode())
-            val activeUserInfo = gameState.addUserInfo(userInfo)
-            gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
-            val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode!!)
-            socketSession.trySend(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response))
+            if (gameState.isExistingRoom(createRoom.roomName)) {
+                socketSession.trySend(ClientCommand.CREATE_ROOM_EXISTS)
+            } else {
+                val userInfo = createAdminRoom(userSession, socketSession, createRoom, gameState)
+                val activeUserInfo = gameState.addUserInfo(userInfo)
+                if (userInfo == activeUserInfo) {
+                    val roomState = gameState.addRoomState(activeUserInfo.roomName, createQuestionState())
+                    val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode!!)
+                    socketSession.trySend(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response))
+                    sendPracticeData(roomState, userInfo.roomName, gameState)
+                } else {
+                    socketSession.trySend(ClientCommand.CREATE_ROOM_EXISTS)
+                }
+            }
         }
         command.startsWith(ServerCommand.ADMIN_JOIN_ROOM.name) -> {
             val data = command.removePrefix(ServerCommand.ADMIN_JOIN_ROOM.name)
@@ -217,8 +220,27 @@ suspend fun processRequest(gameState: GameState, userSession: UserSession, socke
                 }
             }
         }
+        command.startsWith(ServerCommand.SIGN_OUT.name) -> {
+            gameState.userSignOut(userSession)
+            println("Sending sign out data to user [$userSession]")
+            gameState.getSessionsForUser(userSession)?.forEach { it.trySend(ClientCommand.SIGN_OUT) }
+        }
     }
 }
+
+private fun createAdminRoom(
+    userSession: UserSession,
+    socketSession: WebSocketSession,
+    createRoom: CreateRoom,
+    gameState: GameState
+) = UserInfo(
+    userSession = userSession,
+    socketSession = socketSession,
+    roomName = createRoom.roomName,
+    userType = UserType.ADMIN,
+    adminPasscode = gameState.createAdminPasscode(),
+    guestPasscode = gameState.createGuestPasscode()
+)
 
 private fun createUserInfo(
     userSession: UserSession,

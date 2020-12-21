@@ -28,6 +28,7 @@ import kotlinx.css.backgroundColor
 import kotlinx.css.height
 import kotlinx.css.pct
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import react.RProps
 import react.functionalComponent
@@ -42,7 +43,6 @@ val wsClient = WsClient(HttpClient { install(WebSockets) })
 enum class GameState {
     NONE,
     PRACTICE,
-    CREATE_OR_JOIN,
     CREATE,
     JOIN,
     ADMIN_ROOM
@@ -52,7 +52,7 @@ val app = functionalComponent<RProps> {
     var gameState by useState(GameState.NONE)
     var activeTopic by useState(Topic.Athikaram)
     var activeQuestion by useState("loading...")
-    var activeKuralQuestion by useState(KuralOnly("Error..", "Error..."))
+    var activeKuralQuestion by useState(KuralOnly("loading...", ""))
     var activeKurals by useState(listOf<Thirukkural>())
     var activeShowAnswer by useState(false)
 
@@ -80,6 +80,14 @@ val app = functionalComponent<RProps> {
                         activeKurals = practiceData.thirukkurals
                         activeShowAnswer = false
                     }
+                    message.startsWith(ClientCommand.SIGN_OUT.name) -> {
+                        gameState = GameState.NONE
+                        activeTopic = Topic.Athikaram
+                        activeQuestion = "loading..."
+                        activeKuralQuestion = KuralOnly("loading...", "")
+                        activeKurals = listOf()
+                        activeShowAnswer = false
+                    }
                 }
             }
         }
@@ -88,7 +96,7 @@ val app = functionalComponent<RProps> {
     styledDiv {
         css {
             height = 100.pct
-            backgroundColor = Color("#f5f5f5")
+            backgroundColor = if (gameState == GameState.NONE) Color("#f5f5f5") else Color.white
         }
         styledDiv {
             css {
@@ -100,23 +108,26 @@ val app = functionalComponent<RProps> {
             css {
                 classes = mutableListOf("container-lg")
             }
-            header {
-                activeState = gameState
-                onSignOutBtnClick = {
-                    gameState = when (gameState) {
-                        GameState.CREATE_OR_JOIN, GameState.PRACTICE, GameState.ADMIN_ROOM -> GameState.NONE
-                        GameState.JOIN, GameState.CREATE -> GameState.CREATE_OR_JOIN
-                        else -> GameState.NONE
+            if (gameState != GameState.NONE) {
+                signOut {
+                    onSignOutBtnClick = {
+                        scope.launch {
+                            wsClient.trySend(ServerCommand.SIGN_OUT)
+                        }
                     }
                 }
             }
             when (gameState) {
                 GameState.NONE -> {
                     gameMode {
-                        onGameBtnClick = {
-                            gameState = GameState.CREATE_OR_JOIN
+                        onCreateBtnClick = {
+                            gameState = GameState.ADMIN_ROOM
+                            println("sending ${ServerCommand.CREATE_ROOM}...")
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.CREATE_ROOM.name + Json.encodeToString(CreateRoom(it)))
+                            }
                         }
-                        onPracticeBtnClick = {
+                        onJoinBtnClick = {
                             gameState = GameState.PRACTICE
                             println("sending Practice...")
                             scope.launch {
@@ -126,7 +137,31 @@ val app = functionalComponent<RProps> {
                     }
                 }
                 GameState.ADMIN_ROOM -> {
-                    adminRoom {  }
+                    adminRoom {
+                        topic = activeTopic
+                        question = activeQuestion
+                        kuralQuestion = activeKuralQuestion
+                        thirukkurals = activeKurals
+                        showAnswer = activeShowAnswer
+                        onTopicClick = {
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
+                            }
+                        }
+                        onPreviousClick = {
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.PREVIOUS)
+                            }
+                        }
+                        onShowAnswerClick = {
+                            activeShowAnswer = it
+                        }
+                        onNextClick = {
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.NEXT)
+                            }
+                        }
+                    }
                 }
                 GameState.PRACTICE -> {
                     practice {

@@ -16,9 +16,13 @@
 
 package com.dreamuth.room
 
+import com.dreamuth.KuralOnly
+import com.dreamuth.Thirukkural
+import com.dreamuth.Topic
 import kotlinx.css.fontSize
 import kotlinx.css.height
 import kotlinx.css.pct
+import kotlinx.css.px
 import kotlinx.css.rem
 import react.RBuilder
 import react.RProps
@@ -27,18 +31,60 @@ import react.functionalComponent
 import styled.css
 import styled.styledDiv
 
-private var adminRoom = functionalComponent<RProps> {
+external interface AdminRoomProps: RProps {
+    var topic: Topic
+    var question: String
+    var kuralQuestion: KuralOnly
+    var thirukkurals: List<Thirukkural>
+    var showAnswer: Boolean
+    var onTopicClick: (Topic) -> Unit
+    var onPreviousClick: () -> Unit
+    var onShowAnswerClick: (Boolean) -> Unit
+    var onNextClick: () -> Unit
+}
+
+
+private var adminRoom = functionalComponent<AdminRoomProps> { props ->
     styledDiv {
+        // Desktop
         css {
-            classes = mutableListOf("d-flex justify-content-center align-items-center flex-column")
-            height = 100.pct
-            fontSize = 4.rem
+//            classes = mutableListOf("d-none d-lg-block")
         }
-        +"Admin Room"
+        titleBar {
+            selectedTopic = props.topic
+            firstRowStyle = "col pl-0 pr-0"
+            topicButtonWidth = 200.px
+            secondRowStyle = "col-md-auto pr-0"
+            navigationWidth = 120.px
+            navigationBtnWidth = 120.px
+            onTopicClick = { it -> props.onTopicClick(it) }
+            onPreviousClick = props.onPreviousClick
+            onShowAnswerClick = { it -> props.onShowAnswerClick(it) }
+            onNextClick = { props.onNextClick() }
+        }
+    }
+
+    when (props.topic) {
+        Topic.Kural -> {
+            kuralQuestion {
+                question = props.kuralQuestion
+                questionSize = 2.rem
+                thirukkurals = props.thirukkurals
+                showAnswer = props.showAnswer
+            }
+        }
+        else -> {
+            stringQuestion {
+                question = props.question
+                questionSize = 2.rem
+                thirukkurals = props.thirukkurals
+                showAnswer = props.showAnswer
+            }
+        }
     }
 }
 
-fun RBuilder.adminRoom(handler: RProps.() -> Unit) = child(adminRoom) {
+fun RBuilder.adminRoom(handler: AdminRoomProps.() -> Unit) = child(adminRoom) {
     attrs {
         handler()
     }

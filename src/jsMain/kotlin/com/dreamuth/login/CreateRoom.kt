@@ -18,12 +18,15 @@ package com.dreamuth.login
 
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
+import org.w3c.dom.HTMLInputElement
 import react.RBuilder
 import react.RProps
 import react.child
 import react.functionalComponent
+import react.useState
 import styled.css
 import styled.styledButton
 import styled.styledDiv
@@ -33,10 +36,11 @@ import styled.styledLabel
 import styled.styledSmall
 
 external interface CreateRoomProps: RProps {
-    var onCreateBtnClick: () -> Unit
+    var onCreateBtnClick: (String) -> Unit
 }
 
 private var createRoom = functionalComponent<CreateRoomProps> { props ->
+    var roomName by useState("")
     styledForm {
         css {
             attrs {
@@ -60,12 +64,18 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                         pattern = "^[a-zA-Z0-9 ]+$"
                     }
                 }
+                attrs {
+                    onChangeFunction = {
+                        val target = it.target as HTMLInputElement
+                        roomName = target.value
+                    }
+                }
             }
             styledSmall {
                 css {
                     classes = mutableListOf("form-text text-muted")
                 }
-                +"Your room name can contain letters, numbers and space only"
+                +"Room name can contain letters, numbers and space only"
             }
         }
         styledButton {
@@ -80,7 +90,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
         attrs {
             onSubmitFunction = {
                 it.preventDefault()
-                props.onCreateBtnClick()
+                props.onCreateBtnClick(roomName)
             }
         }
     }

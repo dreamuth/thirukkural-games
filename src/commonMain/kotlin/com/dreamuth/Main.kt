@@ -59,13 +59,16 @@ enum class ServerCommand {
     GUEST_JOIN_ROOM,
     NEXT,
     PREVIOUS,
-    TOPIC_CHANGE
+    TOPIC_CHANGE,
+    SIGN_OUT
 }
 
 enum class ClientCommand {
     PRACTICE_RESPONSE,
     PRACTICE_KURAL_RESPONSE,
-    ADMIN_ROOM_RESPONSE
+    ADMIN_ROOM_RESPONSE,
+    CREATE_ROOM_EXISTS,
+    SIGN_OUT
 }
 
 enum class Topic(val tamil: String) {
@@ -92,6 +95,10 @@ suspend fun WebSocketSession.trySend(message: String) {
             println("at some point it will get closed")
         }
     }
+}
+
+suspend fun WebSocketSession.trySend(command: ClientCommand) {
+    trySend(command.name)
 }
 
 

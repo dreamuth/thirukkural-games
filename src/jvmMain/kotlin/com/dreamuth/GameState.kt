@@ -17,7 +17,6 @@
 package com.dreamuth
 
 import io.ktor.http.cio.websocket.*
-import io.ktor.websocket.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
@@ -47,20 +46,33 @@ class GameState {
         }
     }
 
-    fun userLeft(userSession: UserSession, serverSession: WebSocketServerSession) {
+    fun userLeft(userSession: UserSession, serverSession: WebSocketSession) {
         val socketSessions = sessions[userSession]
         socketSessions?.remove(serverSession)
         socketSessions?.let {
             if (socketSessions.isEmpty()) {
                 val userInfo = users.remove(userSession)
                 userInfo?.let {
-                    println("Removing user session ${userInfo.userSession}")
+                    println("Removing user session on browser close ${userInfo.userSession}")
                     if (users.values.none { it.roomName == userInfo.roomName }) {
                         val questionState = roomState.remove(userInfo.roomName)
                         questionState?.let {
                             println("Removing room ${userInfo.roomName}")
                         }
                     }
+                }
+            }
+        }
+    }
+
+    fun userSignOut(userSession: UserSession) {
+        val userInfo = users.remove(userSession)
+        userInfo?.let {
+            println("Removing user session on sign out ${userInfo.userSession}")
+            if (users.values.none { it.roomName == userInfo.roomName }) {
+                val questionState = roomState.remove(userInfo.roomName)
+                questionState?.let {
+                    println("Removing room ${userInfo.roomName}")
                 }
             }
         }
@@ -82,20 +94,7 @@ class GameState {
         return "Practice-" + practiceRoomNo.getAndIncrement()
     }
 
-    fun createRoomName(): String {
-        var randomString = getRandomString()
-        while (isExistingRoom(randomString)) {
-            randomString = getRandomString()
-        }
-        return randomString
-    }
-
     fun isExistingRoom(randomString: String) = roomState.containsKey(randomString)
-
-    private fun getRandomString(): String {
-        val charset = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        return (1..12).map { charset.random() }.joinToString("")
-    }
 
     fun createAdminPasscode(): String {
         return getRandomNumber(8)
@@ -148,6 +147,10 @@ class GameState {
             .map { it.userSession }
             .map { sessions.getOrDefault(it, listOf()) }
             .flatten()
+    }
+
+    fun getSessionsForUser(userSession: UserSession): MutableList<WebSocketSession>? {
+        return sessions[userSession]
     }
 }
 

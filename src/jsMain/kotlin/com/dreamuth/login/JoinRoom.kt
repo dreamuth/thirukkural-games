@@ -16,13 +16,17 @@
 
 package com.dreamuth.login
 
+import com.dreamuth.room.dropdown
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
 import react.RBuilder
 import react.RProps
 import react.child
+import react.dom.option
+import react.dom.select
 import react.functionalComponent
 import styled.css
 import styled.styledButton
@@ -30,6 +34,7 @@ import styled.styledDiv
 import styled.styledForm
 import styled.styledInput
 import styled.styledLabel
+import styled.styledSelect
 import styled.styledSmall
 
 external interface JoinRoomProps: RProps {
@@ -50,22 +55,18 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
             styledLabel {
                 +"Room name"
             }
-            styledInput {
+            styledSelect {
                 css {
-                    classes = mutableListOf("form-control")
+                    classes = mutableListOf("form-control custom-select")
                     attrs {
-                        type = InputType.text
-                        name = "roomName"
-                        required = true
-                        pattern = "^[a-zA-Z0-9 ]+$"
+                        id = "selectRoom1"
                     }
                 }
-            }
-            styledSmall {
-                css {
-                    classes = mutableListOf("form-text text-muted")
-                }
-                +"Your room name can contain letters, numbers and space only"
+                option { +"Choose..." }
+                option { +"Room 1" }
+                option { +"Room 2" }
+                option { +"Room 3" }
+                option { +"Room 4" }
             }
         }
         styledDiv {
@@ -73,13 +74,13 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                 classes = mutableListOf("form-group")
             }
             styledLabel {
-                +"Passcode"
+                +"Room Passcode"
             }
             styledInput {
                 css {
                     classes = mutableListOf("form-control")
                     attrs {
-                        type = InputType.text
+                        type = InputType.password
                         name = "roomPasscode"
                         required = true
                     }
@@ -89,7 +90,7 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                 css {
                     classes = mutableListOf("form-text text-muted")
                 }
-                +"Room admin might have provided the admin or guest passcode"
+//                +"Room admin might have provided the admin or guest passcode"
             }
         }
         styledButton {

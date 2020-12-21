@@ -29,12 +29,12 @@ import styled.styledImg
 import styled.styledUl
 
 external interface GameModeProps: RProps {
-    var onGameBtnClick: () -> Unit
-    var onPracticeBtnClick: () -> Unit
+    var onCreateBtnClick: (String) -> Unit
+    var onJoinBtnClick: () -> Unit
 }
 
 private var gameMode = functionalComponent<GameModeProps> { props ->
-    var gameState by useState(GameState.CREATE)
+    var loginState by useState(GameState.CREATE)
 
     styledDiv {
         css {
@@ -46,7 +46,7 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
             }
             styledDiv {
                 css {
-                    classes = mutableListOf("col-lg-7 mx-auto")
+                    classes = mutableListOf("col-lg-5 mx-auto")
                 }
                 styledDiv {
                     css {
@@ -69,16 +69,16 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
                         }
                         linkItem {
                             name = "Create Room"
-                            isActive = gameState == GameState.CREATE
+                            isActive = loginState == GameState.CREATE
                             onClickFunction = {
-                                gameState = GameState.CREATE
+                                loginState = GameState.CREATE
                             }
                         }
                         linkItem {
                             name = "Join Room"
-                            isActive = gameState == GameState.JOIN
+                            isActive = loginState == GameState.JOIN
                             onClickFunction = {
-                                gameState = GameState.JOIN
+                                loginState = GameState.JOIN
                             }
                         }
                     }
@@ -86,15 +86,15 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
                         css {
                             classes = mutableListOf("tab-content")
                         }
-                        when (gameState) {
+                        when (loginState) {
                             GameState.CREATE -> {
                                 createRoom {
-                                    onCreateBtnClick = props.onPracticeBtnClick
+                                    onCreateBtnClick = props.onCreateBtnClick
                                 }
                             }
                             GameState.JOIN -> {
                                 joinRoom {
-                                    onJoinBtnClick = props.onPracticeBtnClick
+                                    onJoinBtnClick = props.onJoinBtnClick
                                 }
                             }
                             else -> {

@@ -17,11 +17,10 @@
 package com.dreamuth
 
 import kotlinx.browser.document
-import react.child
 import react.dom.render
 
 fun main() {
     render(document.getElementById("root")) {
-        child(app) {}
+        child(App::class) {}
     }
 }

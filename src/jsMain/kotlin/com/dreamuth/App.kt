@@ -35,14 +35,9 @@ import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
-import react.ReactElement
-import react.functionalComponent
 import react.setState
-import react.useEffect
-import react.useState
 import styled.css
 import styled.styledDiv
-import styled.styledP
 
 val scope = MainScope()
 val wsClient = WsClient(HttpClient { install(WebSockets) })
@@ -236,7 +231,10 @@ class App : RComponent<RProps, AppState> () {
                         }
                         else -> println("Error state...")
                     }
-                    if (state.isAdminRoom) {
+                    if (state.isAdminRoom
+                        && state.roomName != null
+                        && state.adminPasscode != null
+                        && state.guestPasscode != null) {
                         roomInfo {
                             roomName = state.roomName!!
                             adminPasscode = state.adminPasscode!!

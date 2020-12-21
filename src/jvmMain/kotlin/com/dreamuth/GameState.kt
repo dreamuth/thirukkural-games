@@ -57,7 +57,12 @@ class GameState(private val logger: Logger) {
         val userInfo = users.remove(userSession)
         userInfo?.let {
             logger.info("Removing ${userSession.name} on $reason.")
-            if (users.values.none { it.roomName == userInfo.roomName }) {
+            if (users.values.none { it.roomName == userInfo.roomName && it.adminPasscode != null }) {
+                val guests = users.entries.filter { it.value.roomName == userInfo.roomName }.map { it.key }
+                guests.forEach {
+                    users.remove(it)
+                    it.send(ClientCommand.SIGN_OUT)
+                }
                 val questionState = rooms.remove(userInfo.roomName)
                 questionState?.let {
                     println("Removing room ${userInfo.roomName}")

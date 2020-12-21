@@ -29,6 +29,7 @@ import styled.styledImg
 import styled.styledUl
 
 external interface GameModeProps: RProps {
+    var roomNames: List<String>
     var onCreateBtnClick: (String) -> Unit
     var onJoinBtnClick: () -> Unit
 }
@@ -94,6 +95,7 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
                             }
                             GameState.JOIN -> {
                                 joinRoom {
+                                    roomNames = props.roomNames
                                     onJoinBtnClick = props.onJoinBtnClick
                                 }
                             }

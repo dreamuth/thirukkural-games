@@ -55,6 +55,7 @@ val app = functionalComponent<RProps> {
     var activeKuralQuestion by useState(KuralOnly("loading...", ""))
     var activeKurals by useState(listOf<Thirukkural>())
     var activeShowAnswer by useState(false)
+    var activeRoomNames by useState(listOf<String>())
 
     useEffect(listOf()) {
         scope.launch {
@@ -88,6 +89,11 @@ val app = functionalComponent<RProps> {
                         activeKurals = listOf()
                         activeShowAnswer = false
                     }
+                    message.startsWith(ClientCommand.ACTIVE_ROOMS.name) -> {
+                        val data = message.removePrefix(ClientCommand.ACTIVE_ROOMS.name)
+                        val roomNamesData = Json.decodeFromString<RoomNamesData>(data)
+                        activeRoomNames = roomNamesData.roomNames
+                    }
                 }
             }
         }
@@ -120,6 +126,7 @@ val app = functionalComponent<RProps> {
             when (gameState) {
                 GameState.NONE -> {
                     gameMode {
+                        roomNames = activeRoomNames
                         onCreateBtnClick = {
                             gameState = GameState.ADMIN_ROOM
                             println("sending ${ServerCommand.CREATE_ROOM}...")

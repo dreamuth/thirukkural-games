@@ -16,7 +16,6 @@
 
 package com.dreamuth.login
 
-import com.dreamuth.room.dropdown
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
@@ -26,11 +25,11 @@ import react.RBuilder
 import react.RProps
 import react.child
 import react.dom.option
-import react.dom.select
 import react.functionalComponent
 import styled.css
 import styled.styledButton
 import styled.styledDiv
+import styled.styledFieldSet
 import styled.styledForm
 import styled.styledInput
 import styled.styledLabel
@@ -38,6 +37,7 @@ import styled.styledSelect
 import styled.styledSmall
 
 external interface JoinRoomProps: RProps {
+    var roomNames: List<String>
     var onJoinBtnClick: () -> Unit
 }
 
@@ -48,64 +48,79 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                 role = "form"
             }
         }
-        styledDiv {
-            css {
-                classes = mutableListOf("form-group")
-            }
-            styledLabel {
-                +"Room name"
-            }
-            styledSelect {
-                css {
-                    classes = mutableListOf("form-control custom-select")
-                    attrs {
-                        id = "selectRoom1"
-                    }
-                }
-                option { +"Choose..." }
-                option { +"Room 1" }
-                option { +"Room 2" }
-                option { +"Room 3" }
-                option { +"Room 4" }
-            }
-        }
-        styledDiv {
-            css {
-                classes = mutableListOf("form-group")
-            }
-            styledLabel {
-                +"Room Passcode"
-            }
-            styledInput {
-                css {
-                    classes = mutableListOf("form-control")
-                    attrs {
-                        type = InputType.password
-                        name = "roomPasscode"
-                        required = true
-                    }
-                }
-            }
-            styledSmall {
-                css {
-                    classes = mutableListOf("form-text text-muted")
-                }
-//                +"Room admin might have provided the admin or guest passcode"
-            }
-        }
-        styledButton {
-            css {
-                classes = mutableListOf("btn btn-primary btn-block rounded-pill")
-                attrs {
-                    type = ButtonType.submit
-                }
-            }
-            +"Join"
-        }
         attrs {
             onSubmitFunction = {
                 it.preventDefault()
                 props.onJoinBtnClick()
+            }
+        }
+        if (props.roomNames.isEmpty()) {
+            styledDiv {
+                css {
+                    classes = mutableListOf("alert alert-warning")
+                }
+                +"There is no active room at this time!"
+            }
+        }
+        styledFieldSet {
+            css {
+                attrs {
+                    disabled = props.roomNames.isEmpty()
+                }
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf("form-group")
+                }
+                styledLabel {
+                    +"Room name"
+                }
+                styledSelect {
+                    css {
+                        classes = mutableListOf("form-control custom-select")
+                        attrs {
+                            id = "selectRoom1"
+                        }
+                    }
+                    props.roomNames.forEach { roomName ->
+                        option {
+                            +roomName
+                        }
+                    }
+                }
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf("form-group")
+                }
+                styledLabel {
+                    +"Room Passcode"
+                }
+                styledInput {
+                    css {
+                        classes = mutableListOf("form-control")
+                        attrs {
+                            type = InputType.password
+                            name = "roomPasscode"
+                            required = true
+                        }
+                    }
+                }
+                styledSmall {
+                    css {
+                        classes = mutableListOf("form-text text-muted")
+                    }
+//                +"Room admin might have provided the admin or guest passcode"
+                }
+            }
+            styledButton {
+                css {
+                    classes = mutableListOf("btn btn-primary btn-block rounded-pill")
+                    attrs {
+                        type = ButtonType.submit
+                    }
+                }
+                +"Join"
             }
         }
     }

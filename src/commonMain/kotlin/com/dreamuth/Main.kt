@@ -52,6 +52,9 @@ data class PracticeData(val topic: Topic, val question: String, val thirukkurals
 @Serializable
 data class PracticeKuralData(val topic: Topic, val question: KuralOnly, val thirukkurals: List<Thirukkural>)
 
+@Serializable
+data class RoomNamesData(val roomNames: List<String>)
+
 enum class ServerCommand {
     PRACTICE,
     CREATE_ROOM,
@@ -68,7 +71,8 @@ enum class ClientCommand {
     PRACTICE_KURAL_RESPONSE,
     ADMIN_ROOM_RESPONSE,
     CREATE_ROOM_EXISTS,
-    SIGN_OUT
+    SIGN_OUT,
+    ACTIVE_ROOMS
 }
 
 enum class Topic(val tamil: String) {

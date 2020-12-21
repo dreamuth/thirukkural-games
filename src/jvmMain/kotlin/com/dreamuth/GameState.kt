@@ -17,6 +17,8 @@
 package com.dreamuth
 
 import io.ktor.http.cio.websocket.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicLong
@@ -43,10 +45,16 @@ class GameState {
             }
         } else {
             socketSession.trySend("Welcome $userSession")
+            sendActiveRooms(socketSession)
         }
     }
 
-    fun userLeft(userSession: UserSession, serverSession: WebSocketSession) {
+    private suspend fun sendActiveRooms(socketSession: WebSocketSession) {
+        val data = Json.encodeToString(RoomNamesData(roomState.keys.filterNotNull().sorted().toList()))
+        socketSession.trySend(ClientCommand.ACTIVE_ROOMS.name + data)
+    }
+
+    suspend fun userLeft(userSession: UserSession, serverSession: WebSocketSession) {
         val socketSessions = sessions[userSession]
         socketSessions?.remove(serverSession)
         socketSessions?.let {
@@ -58,6 +66,7 @@ class GameState {
                         val questionState = roomState.remove(userInfo.roomName)
                         questionState?.let {
                             println("Removing room ${userInfo.roomName}")
+                            sendActiveRooms()
                         }
                     }
                 }
@@ -65,7 +74,7 @@ class GameState {
         }
     }
 
-    fun userSignOut(userSession: UserSession) {
+    suspend fun userSignOut(userSession: UserSession) {
         val userInfo = users.remove(userSession)
         userInfo?.let {
             println("Removing user session on sign out ${userInfo.userSession}")
@@ -73,6 +82,7 @@ class GameState {
                 val questionState = roomState.remove(userInfo.roomName)
                 questionState?.let {
                     println("Removing room ${userInfo.roomName}")
+                    sendActiveRooms()
                 }
             }
         }
@@ -129,12 +139,18 @@ class GameState {
             .first()!!
     }
 
-    fun addRoomState(roomName: String, questionState: QuestionState): QuestionState {
+    suspend fun addRoomState(roomName: String, questionState: QuestionState): QuestionState {
         val result = roomState.putIfAbsent(roomName, questionState)
         if (result != null) {
             println("RoomState already exists for room, $roomName")
+        } else {
+            sendActiveRooms()
         }
         return result ?: questionState
+    }
+
+    private suspend fun sendActiveRooms() {
+        sessions.values.flatten().forEach { sendActiveRooms(it) }
     }
 
     fun getRoomState(roomName: String): QuestionState? {

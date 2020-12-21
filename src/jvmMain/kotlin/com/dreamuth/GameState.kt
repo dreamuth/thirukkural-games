@@ -19,79 +19,58 @@ package com.dreamuth
 import io.ktor.http.cio.websocket.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.slf4j.Logger
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicLong
+import kotlin.collections.LinkedHashSet
 
 /**
  *
  * @author Uttran Ishtalingam
  */
-class GameState {
-    private val practiceRoomNo = AtomicLong(0)
-    private val roomState = ConcurrentHashMap<String, QuestionState>()
+class GameState(private val logger: Logger) {
+    private val allUserSessions = Collections.synchronizedSet(LinkedHashSet<UserSession>())
     private val users = ConcurrentHashMap<UserSession, UserInfo>()
-    private val sessions = ConcurrentHashMap<UserSession, MutableList<WebSocketSession>>()
+    private val rooms = ConcurrentHashMap<String, QuestionState>()
 
-    suspend fun userJoin(userSession: UserSession, socketSession: WebSocketSession) {
-        val list = sessions.computeIfAbsent(userSession) { CopyOnWriteArrayList() }
-        list.add(socketSession)
-        if (users.containsKey(userSession)) {
-            users[userSession]?.roomName?.let { roomName ->
-                roomState[roomName]?.let { questionState ->
-                    println("Adding $userSession to room [$roomName]")
-                    socketSession.trySend(createPracticeData(questionState))
-                }
-            }
-        } else {
-            socketSession.trySend("Welcome $userSession")
-            sendActiveRooms(socketSession)
-        }
+    suspend fun userJoin(userSession: UserSession) {
+        allUserSessions.add(userSession)
+        userSession.send("Welcome ${userSession.name}")
+        sendActiveRoomsToUser(userSession)
     }
 
-    private suspend fun sendActiveRooms(socketSession: WebSocketSession) {
-        val data = Json.encodeToString(RoomNamesData(roomState.keys.filterNotNull().sorted().toList()))
-        socketSession.trySend(ClientCommand.ACTIVE_ROOMS.name + data)
+    private suspend fun sendActiveRoomsToUser(userSession: UserSession) {
+        val data = Json.encodeToString(RoomNamesData(rooms.keys.filterNotNull().sorted().toList()))
+        userSession.send(ClientCommand.ACTIVE_ROOMS.name + data)
     }
 
-    suspend fun userLeft(userSession: UserSession, serverSession: WebSocketSession) {
-        val socketSessions = sessions[userSession]
-        socketSessions?.remove(serverSession)
-        socketSessions?.let {
-            if (socketSessions.isEmpty()) {
-                val userInfo = users.remove(userSession)
-                userInfo?.let {
-                    println("Removing user session on browser close ${userInfo.userSession}")
-                    if (users.values.none { it.roomName == userInfo.roomName }) {
-                        val questionState = roomState.remove(userInfo.roomName)
-                        questionState?.let {
-                            println("Removing room ${userInfo.roomName}")
-                            sendActiveRooms()
-                        }
-                    }
-                }
-            }
-        }
+    suspend fun userLeft(userSession: UserSession) {
+        allUserSessions -= userSession
+        removeUser(userSession, "browser close")
     }
 
     suspend fun userSignOut(userSession: UserSession) {
+        removeUser(userSession, "sign out")
+    }
+
+    private suspend fun removeUser(userSession: UserSession, reason: String) {
         val userInfo = users.remove(userSession)
         userInfo?.let {
-            println("Removing user session on sign out ${userInfo.userSession}")
+            logger.info("Removing ${userSession.name} on $reason.")
             if (users.values.none { it.roomName == userInfo.roomName }) {
-                val questionState = roomState.remove(userInfo.roomName)
+                val questionState = rooms.remove(userInfo.roomName)
                 questionState?.let {
                     println("Removing room ${userInfo.roomName}")
-                    sendActiveRooms()
+                    sendActiveRoomsToAllUsers()
                 }
             }
         }
     }
 
     fun addUserInfo(userInfo: UserInfo): UserInfo {
-        val result = users.putIfAbsent(userInfo.userSession, userInfo)
+        val result = users.putIfAbsent(userInfo.session, userInfo)
         if (result != null) {
-            println("session already exists, ${userInfo.userSession}")
+            logger.error("User ${userInfo.session.name} already exists. Old: $result New: $userInfo")
         }
         return result ?: userInfo
     }
@@ -100,11 +79,7 @@ class GameState {
         return users[userSession]
     }
 
-    fun createPracticeRoom(): String {
-        return "Practice-" + practiceRoomNo.getAndIncrement()
-    }
-
-    fun isExistingRoom(randomString: String) = roomState.containsKey(randomString)
+    fun isExistingRoom(randomString: String) = rooms.containsKey(randomString)
 
     fun createAdminPasscode(): String {
         return getRandomNumber(8)
@@ -134,39 +109,41 @@ class GameState {
     fun getGuestPasscode(adminJoinRoom: AdminJoinRoom): String {
         return users.map { it.value }
             .filter { it.roomName == adminJoinRoom.roomName }
-            .filter { it.adminPasscode == adminJoinRoom.passcode }
             .map { it.guestPasscode }
-            .first()!!
+            .first()
     }
 
-    suspend fun addRoomState(roomName: String, questionState: QuestionState): QuestionState {
-        val result = roomState.putIfAbsent(roomName, questionState)
+    suspend fun addQuestionState(roomName: String, questionState: QuestionState): QuestionState {
+        val result = rooms.putIfAbsent(roomName, questionState)
         if (result != null) {
-            println("RoomState already exists for room, $roomName")
+            logger.warn("RoomState already exists for room $roomName")
         } else {
-            sendActiveRooms()
+            sendActiveRoomsToAllUsers()
         }
         return result ?: questionState
     }
 
-    private suspend fun sendActiveRooms() {
-        sessions.values.flatten().forEach { sendActiveRooms(it) }
+
+    private suspend fun sendActiveRoomsToAllUsers() {
+        allUserSessions.forEach { sendActiveRoomsToUser(it) }
     }
 
-    fun getRoomState(roomName: String): QuestionState? {
-        return roomState[roomName]
+    fun getQuestionState(roomName: String): QuestionState? {
+        return rooms[roomName]
     }
 
-    fun getSessionsForRoom(roomName: String): List<WebSocketSession> {
+    fun getAdminSessionsForRoom(roomName: String): List<WebSocketSession> {
         return users.values
             .filter { it.roomName == roomName }
-            .map { it.userSession }
-            .map { sessions.getOrDefault(it, listOf()) }
-            .flatten()
+            .filter { it.adminPasscode != null }
+            .map { it.session.session }
     }
 
-    fun getSessionsForUser(userSession: UserSession): MutableList<WebSocketSession>? {
-        return sessions[userSession]
+    fun getGuestSessionsForRoom(roomName: String): List<WebSocketSession> {
+        return users.values
+            .filter { it.roomName == roomName }
+            .filter { it.adminPasscode == null }
+            .map { it.session.session }
     }
 }
 

@@ -18,7 +18,7 @@ package com.dreamuth
 
 import com.dreamuth.login.gameMode
 import com.dreamuth.room.adminRoom
-import com.dreamuth.room.practice
+import com.dreamuth.room.guestQuestion
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.MainScope
@@ -42,20 +42,27 @@ val wsClient = WsClient(HttpClient { install(WebSockets) })
 
 enum class GameState {
     NONE,
-    PRACTICE,
     CREATE,
     JOIN,
-    ADMIN_ROOM
+    ADMIN_ROOM,
+    GUEST_ROOM
 }
 
+data class ActiveGame(
+    var gameState: GameState = GameState.NONE,
+    var topic: Topic = Topic.Athikaram,
+    var question: String = "Loading...",
+    var question2: String? = null,
+    var kurals: List<Thirukkural> = listOf(),
+    var roomName: String? = null,
+    var roomNames: List<String> = listOf(),
+    var isAdminRoom: Boolean = false,
+    var adminPasscode: String? = null,
+    var guestPasscode: String? = null
+)
+
 val app = functionalComponent<RProps> {
-    var gameState by useState(GameState.NONE)
-    var activeTopic by useState(Topic.Athikaram)
-    var activeQuestion by useState("loading...")
-    var activeKuralQuestion by useState(KuralOnly("loading...", ""))
-    var activeKurals by useState(listOf<Thirukkural>())
-    var activeShowAnswer by useState(false)
-    var activeRoomNames by useState(listOf<String>())
+    var activeGame by useState(ActiveGame())
 
     useEffect(listOf()) {
         scope.launch {
@@ -63,36 +70,48 @@ val app = functionalComponent<RProps> {
             wsClient.receive { message ->
                 println(message)
                 when {
-                    message.startsWith(ClientCommand.PRACTICE_RESPONSE.name) -> {
-                        val data = message.removePrefix(ClientCommand.PRACTICE_RESPONSE.name)
-                        val practiceData = Json.decodeFromString<PracticeData>(data)
-                        gameState = GameState.PRACTICE
-                        activeTopic = practiceData.topic
-                        activeQuestion = practiceData.question
-                        activeKurals = practiceData.thirukkurals
-                        activeShowAnswer = false
-                    }
-                    message.startsWith(ClientCommand.PRACTICE_KURAL_RESPONSE.name) -> {
-                        val data = message.removePrefix(ClientCommand.PRACTICE_KURAL_RESPONSE.name)
-                        val practiceData = Json.decodeFromString<PracticeKuralData>(data)
-                        gameState = GameState.PRACTICE
-                        activeTopic = practiceData.topic
-                        activeKuralQuestion = practiceData.question
-                        activeKurals = practiceData.thirukkurals
-                        activeShowAnswer = false
-                    }
-                    message.startsWith(ClientCommand.SIGN_OUT.name) -> {
-                        gameState = GameState.NONE
-                        activeTopic = Topic.Athikaram
-                        activeQuestion = "loading..."
-                        activeKuralQuestion = KuralOnly("loading...", "")
-                        activeKurals = listOf()
-                        activeShowAnswer = false
-                    }
                     message.startsWith(ClientCommand.ACTIVE_ROOMS.name) -> {
                         val data = message.removePrefix(ClientCommand.ACTIVE_ROOMS.name)
                         val roomNamesData = Json.decodeFromString<RoomNamesData>(data)
-                        activeRoomNames = roomNamesData.roomNames
+                        activeGame = activeGame.copy(
+                            roomNames = roomNamesData.roomNames,
+                            roomName = if (roomNamesData.roomNames.contains(activeGame.roomName)) activeGame.roomName
+                                else roomNamesData.roomNames.firstOrNull()
+                        )
+                    }
+                    message.startsWith(ClientCommand.ADMIN_ROOM_RESPONSE.name) -> {
+                        val data = message.removePrefix(ClientCommand.ADMIN_ROOM_RESPONSE.name)
+                        val adminRoomResponse = Json.decodeFromString<AdminRoomResponse>(data)
+                        activeGame = activeGame.copy(
+                            isAdminRoom = true,
+                            adminPasscode = adminRoomResponse.adminPasscode,
+                            guestPasscode = adminRoomResponse.guestPasscode
+                        )
+                    }
+                    message.startsWith(ClientCommand.ADMIN_QUESTION.name) -> {
+                        val data = message.removePrefix(ClientCommand.ADMIN_QUESTION.name)
+                        val adminQuestion = Json.decodeFromString<AdminQuestion>(data)
+                        activeGame = activeGame.copy(
+                            topic = adminQuestion.topic,
+                            question = adminQuestion.question,
+                            question2 = adminQuestion.question2,
+                            kurals = adminQuestion.thirukkurals,
+                            gameState = GameState.ADMIN_ROOM
+                        )
+                    }
+                    message.startsWith(ClientCommand.GUEST_QUESTION.name) -> {
+                        val data = message.removePrefix(ClientCommand.GUEST_QUESTION.name)
+                        val guestQuestion = Json.decodeFromString<GuestQuestion>(data)
+                        activeGame = activeGame.copy(
+                            topic = guestQuestion.topic,
+                            question = guestQuestion.question,
+                            question2 = guestQuestion.question2,
+                            kurals = listOf(),
+                            gameState = GameState.GUEST_ROOM
+                        )
+                    }
+                    message.startsWith(ClientCommand.SIGN_OUT.name) -> {
+                        activeGame = ActiveGame()
                     }
                 }
             }
@@ -102,7 +121,7 @@ val app = functionalComponent<RProps> {
     styledDiv {
         css {
             height = 100.pct
-            backgroundColor = if (gameState == GameState.NONE) Color("#f5f5f5") else Color.white
+            backgroundColor = if (activeGame.gameState == GameState.NONE) Color("#f5f5f5") else Color.white
         }
         styledDiv {
             css {
@@ -114,7 +133,7 @@ val app = functionalComponent<RProps> {
             css {
                 classes = mutableListOf("container-lg")
             }
-            if (gameState != GameState.NONE) {
+            if (activeGame.gameState != GameState.NONE) {
                 signOut {
                     onSignOutBtnClick = {
                         scope.launch {
@@ -123,33 +142,40 @@ val app = functionalComponent<RProps> {
                     }
                 }
             }
-            when (gameState) {
+            when (activeGame.gameState) {
                 GameState.NONE -> {
                     gameMode {
-                        roomNames = activeRoomNames
-                        onCreateBtnClick = {
-                            gameState = GameState.ADMIN_ROOM
+                        roomNames = activeGame.roomNames
+                        roomName = activeGame.roomName
+                        onRoomNameChange = {
+                            roomName = it
+                        }
+                        onCreateBtnClick = { name ->
                             println("sending ${ServerCommand.CREATE_ROOM}...")
                             scope.launch {
-                                wsClient.trySend(ServerCommand.CREATE_ROOM.name + Json.encodeToString(CreateRoom(it)))
+                                wsClient.trySend(ServerCommand.CREATE_ROOM.name + Json.encodeToString(CreateRoom(name)))
                             }
                         }
-                        onJoinBtnClick = {
-                            gameState = GameState.PRACTICE
-                            println("sending Practice...")
+                        onAdminJoinBtnClick = { name, passcode ->
+                            println("sending ${ServerCommand.ADMIN_JOIN_ROOM}...")
                             scope.launch {
-                                wsClient.trySend(ServerCommand.PRACTICE)
+                                wsClient.trySend(ServerCommand.ADMIN_JOIN_ROOM.name + Json.encodeToString(AdminJoinRoom(name, passcode)))
+                            }
+                        }
+                        onGuestJoinBtnClick = { name, passcode ->
+                            println("sending ${ServerCommand.GUEST_JOIN_ROOM}...")
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.GUEST_JOIN_ROOM.name + Json.encodeToString(GuestJoinRoom(name, passcode)))
                             }
                         }
                     }
                 }
                 GameState.ADMIN_ROOM -> {
                     adminRoom {
-                        topic = activeTopic
-                        question = activeQuestion
-                        kuralQuestion = activeKuralQuestion
-                        thirukkurals = activeKurals
-                        showAnswer = activeShowAnswer
+                        topic = activeGame.topic
+                        question = activeGame.question
+                        question2 = activeGame.question2
+                        thirukkurals = activeGame.kurals
                         onTopicClick = {
                             scope.launch {
                                 wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
@@ -159,9 +185,6 @@ val app = functionalComponent<RProps> {
                             scope.launch {
                                 wsClient.trySend(ServerCommand.PREVIOUS)
                             }
-                        }
-                        onShowAnswerClick = {
-                            activeShowAnswer = it
                         }
                         onNextClick = {
                             scope.launch {
@@ -170,31 +193,11 @@ val app = functionalComponent<RProps> {
                         }
                     }
                 }
-                GameState.PRACTICE -> {
-                    practice {
-                        topic = activeTopic
-                        question = activeQuestion
-                        kuralQuestion = activeKuralQuestion
-                        thirukkurals = activeKurals
-                        showAnswer = activeShowAnswer
-                        onTopicClick = {
-                            scope.launch {
-                                wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
-                            }
-                        }
-                        onPreviousClick = {
-                            scope.launch {
-                                wsClient.trySend(ServerCommand.PREVIOUS)
-                            }
-                        }
-                        onShowAnswerClick = {
-                            activeShowAnswer = it
-                        }
-                        onNextClick = {
-                            scope.launch {
-                                wsClient.trySend(ServerCommand.NEXT)
-                            }
-                        }
+                GameState.GUEST_ROOM -> {
+                    guestQuestion {
+                        topic = activeGame.topic
+                        question = activeGame.question
+                        question2 = activeGame.question2
                     }
                 }
                 else -> println("Error state...")

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.components
 
 import kotlinx.css.LinearDimension
 import kotlinx.css.width

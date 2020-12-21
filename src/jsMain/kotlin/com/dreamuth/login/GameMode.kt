@@ -17,6 +17,7 @@
 package com.dreamuth.login
 
 import com.dreamuth.GameState
+import com.dreamuth.components.linkItem
 import kotlinx.html.role
 import react.RBuilder
 import react.RProps
@@ -30,8 +31,11 @@ import styled.styledUl
 
 external interface GameModeProps: RProps {
     var roomNames: List<String>
+    var roomName: String?
+    var onRoomNameChange: (String) -> Unit
     var onCreateBtnClick: (String) -> Unit
-    var onJoinBtnClick: () -> Unit
+    var onAdminJoinBtnClick: (String, String) -> Unit
+    var onGuestJoinBtnClick: (String, String) -> Unit
 }
 
 private var gameMode = functionalComponent<GameModeProps> { props ->
@@ -96,7 +100,10 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
                             GameState.JOIN -> {
                                 joinRoom {
                                     roomNames = props.roomNames
-                                    onJoinBtnClick = props.onJoinBtnClick
+                                    roomName = props.roomName
+                                    onRoomNameChange = props.onRoomNameChange
+                                    onAdminJoinBtnClick = props.onAdminJoinBtnClick
+                                    onGuestJoinBtnClick = props.onGuestJoinBtnClick
                                 }
                             }
                             else -> {

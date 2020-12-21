@@ -19,13 +19,19 @@ package com.dreamuth.login
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
+import kotlinx.html.js.onChangeFunction
+import kotlinx.html.js.onFormChangeFunction
+import kotlinx.html.js.onSelectFunction
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
+import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
 import react.RProps
 import react.child
 import react.dom.option
 import react.functionalComponent
+import react.useState
 import styled.css
 import styled.styledButton
 import styled.styledDiv
@@ -38,10 +44,15 @@ import styled.styledSmall
 
 external interface JoinRoomProps: RProps {
     var roomNames: List<String>
-    var onJoinBtnClick: () -> Unit
+    var roomName: String?
+    var onRoomNameChange: (String) -> Unit
+    var onAdminJoinBtnClick: (String, String) -> Unit
+    var onGuestJoinBtnClick: (String, String) -> Unit
 }
 
 private var joinRoom = functionalComponent<JoinRoomProps> { props ->
+    var passcode by useState("")
+
     styledForm {
         css {
             attrs {
@@ -51,7 +62,13 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
         attrs {
             onSubmitFunction = {
                 it.preventDefault()
-                props.onJoinBtnClick()
+                props.roomName?.let { roomName ->
+                    if (passcode.length == 8) {
+                        props.onAdminJoinBtnClick(roomName, passcode)
+                    } else {
+                        props.onGuestJoinBtnClick(roomName, passcode)
+                    }
+                }
             }
         }
         if (props.roomNames.isEmpty()) {
@@ -80,11 +97,18 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                         classes = mutableListOf("form-control custom-select")
                         attrs {
                             id = "selectRoom1"
+                            props.roomName?.let { roomName ->
+                                value = roomName
+                            }
                         }
                     }
                     props.roomNames.forEach { roomName ->
-                        option {
-                            +roomName
+                        option { +roomName }
+                    }
+                    attrs {
+                        onChangeFunction = {
+                            val target = it.target as HTMLSelectElement
+                            props.onRoomNameChange(target.value)
                         }
                     }
                 }
@@ -105,12 +129,12 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                             required = true
                         }
                     }
-                }
-                styledSmall {
-                    css {
-                        classes = mutableListOf("form-text text-muted")
+                    attrs {
+                        onChangeFunction = {
+                            val target = it.target as HTMLInputElement
+                            passcode = target.value
+                        }
                     }
-//                +"Room admin might have provided the admin or guest passcode"
                 }
             }
             styledButton {

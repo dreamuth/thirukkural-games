@@ -55,12 +55,6 @@ class WsClient(private val client: HttpClient) {
             this.method = HttpMethod.Get
             url(scheme, window.location.hostname, port, "/ws")
         }
-//        session = client.webSocketSession(
-//            method = HttpMethod.Get,
-//            host = "wss://" + window.location.hostname,
-//            port = window.location.port.toInt(),
-//            path = "/ws"
-//        )
     }
 
     suspend fun trySend(command: ServerCommand) {

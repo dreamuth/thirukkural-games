@@ -17,6 +17,7 @@
 package com.dreamuth.room
 
 import com.dreamuth.Topic
+import com.dreamuth.components.dropdown
 import kotlinx.css.LinearDimension
 import kotlinx.css.width
 import react.RBuilder
@@ -45,7 +46,6 @@ external interface TitleBarProps: RProps {
     var onPersonClick: (String) -> Unit
     var onTopicClick: (Topic) -> Unit
     var onFilterClick: (Int) -> Unit
-    var onShowAnswerClick: (Boolean) -> Unit
     var onPreviousClick: () -> Unit
     var onResetClick: () -> Unit
     var onNextClick: () -> Unit
@@ -96,19 +96,19 @@ class TitleBar : RComponent<TitleBarProps, RState>() {
                     buttonSize = props.navigationWidth
                     smallBtnWidth = props.navigationBtnWidth
 //                    timer = props.timer
-                    onShowAnswerClick = {
-                        props.onShowAnswerClick(!props.showAnswer)
-                    }
+//                    onShowAnswerClick = {
+//                        props.onShowAnswerClick(!props.showAnswer)
+//                    }
                     onPreviousClick = {
-                        props.onShowAnswerClick(false)
+//                        props.onShowAnswerClick(false)
                         props.onPreviousClick()
                     }
                     onResetClick = {
-                        props.onShowAnswerClick(false)
+//                        props.onShowAnswerClick(false)
                         props.onResetClick()
                     }
                     onNextClick = {
-                        props.onShowAnswerClick(false)
+//                        props.onShowAnswerClick(false)
                         props.onNextClick()
                     }
                     onTimerClick = {

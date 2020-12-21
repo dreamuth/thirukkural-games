@@ -19,9 +19,6 @@ package com.dreamuth.room
 import com.dreamuth.KuralOnly
 import com.dreamuth.Thirukkural
 import com.dreamuth.Topic
-import kotlinx.css.fontSize
-import kotlinx.css.height
-import kotlinx.css.pct
 import kotlinx.css.px
 import kotlinx.css.rem
 import react.RBuilder
@@ -34,12 +31,10 @@ import styled.styledDiv
 external interface AdminRoomProps: RProps {
     var topic: Topic
     var question: String
-    var kuralQuestion: KuralOnly
+    var question2: String?
     var thirukkurals: List<Thirukkural>
-    var showAnswer: Boolean
     var onTopicClick: (Topic) -> Unit
     var onPreviousClick: () -> Unit
-    var onShowAnswerClick: (Boolean) -> Unit
     var onNextClick: () -> Unit
 }
 
@@ -59,7 +54,6 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
             navigationBtnWidth = 120.px
             onTopicClick = { it -> props.onTopicClick(it) }
             onPreviousClick = props.onPreviousClick
-            onShowAnswerClick = { it -> props.onShowAnswerClick(it) }
             onNextClick = { props.onNextClick() }
         }
     }
@@ -67,10 +61,9 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
     when (props.topic) {
         Topic.Kural -> {
             kuralQuestion {
-                question = props.kuralQuestion
+                question = KuralOnly(props.question, props.question2!!)
                 questionSize = 2.rem
                 thirukkurals = props.thirukkurals
-                showAnswer = props.showAnswer
             }
         }
         else -> {
@@ -78,7 +71,6 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
                 question = props.question
                 questionSize = 2.rem
                 thirukkurals = props.thirukkurals
-                showAnswer = props.showAnswer
             }
         }
     }

@@ -41,10 +41,17 @@ external interface CreateRoomProps: RProps {
 
 private var createRoom = functionalComponent<CreateRoomProps> { props ->
     var roomName by useState("")
+
     styledForm {
         css {
             attrs {
                 role = "form"
+            }
+        }
+        attrs {
+            onSubmitFunction = {
+                it.preventDefault()
+                props.onCreateBtnClick(roomName.trim())
             }
         }
         styledDiv {
@@ -86,12 +93,6 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                 }
             }
             +"Create"
-        }
-        attrs {
-            onSubmitFunction = {
-                it.preventDefault()
-                props.onCreateBtnClick(roomName)
-            }
         }
     }
 }

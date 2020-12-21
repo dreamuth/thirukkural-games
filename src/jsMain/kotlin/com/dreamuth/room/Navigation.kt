@@ -36,7 +36,6 @@ external interface NavigationProps: RProps {
     var buttonSize: LinearDimension
     var smallBtnWidth: LinearDimension
 //    var timer: Timer
-    var onShowAnswerClick: () -> Unit
     var onTimerClick: () -> Unit
     var onPreviousClick: () -> Unit
     var onResetClick: () -> Unit
@@ -57,18 +56,18 @@ class Navigation : RComponent<NavigationProps, RState>() {
             }
             +"முன்பு"
         }
-        styledButton {
-            css {
-                classes = mutableListOf("btn btn-danger mr-2")
-                width = props.buttonSize
-            }
-            +"பதில்"
-            attrs {
-                onClickFunction = {
-                    props.onShowAnswerClick()
-                }
-            }
-        }
+//        styledButton {
+//            css {
+//                classes = mutableListOf("btn btn-danger mr-2")
+//                width = props.buttonSize
+//            }
+//            +"பதில்"
+//            attrs {
+//                onClickFunction = {
+//                    props.onShowAnswerClick()
+//                }
+//            }
+//        }
         styledButton {
             css {
                 classes = mutableListOf("btn btn-success")

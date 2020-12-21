@@ -16,10 +16,8 @@
 
 package com.dreamuth
 
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.request.*
 import io.ktor.http.cio.websocket.*
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
 
 enum class UserType{
@@ -28,12 +26,25 @@ enum class UserType{
     GUEST
 }
 
+data class UserSession(val session: DefaultWebSocketSession) {
+    companion object { var lastId = AtomicLong(0) }
+    private val id = lastId.getAndIncrement()
+    val name = "user-$id"
+
+    suspend fun send(command: ClientCommand) {
+        send(command.name)
+    }
+
+    suspend fun send(message: String) {
+        session.trySend(message)
+    }
+}
+
 data class UserInfo(
-    val userSession: UserSession,
-    val socketSession: WebSocketSession,
+    val session: UserSession,
     val roomName: String,
     val userType: UserType,
-    val guestPasscode: String? = null,
+    val guestPasscode: String,
     val adminPasscode: String? = null)
 
 data class QuestionState(
@@ -56,7 +67,6 @@ data class AthikaramState(
     fun getCurrent(): String = athikarams[index]
     fun goNext() = goNext(athikarams.size)
     fun goPrevious() = goPrevious(athikarams.size)
-    fun getReset(): AthikaramState = this.copy(index = getReset(athikarams.size))
 }
 
 private fun getAthikarams(thirukkurals: List<Thirukkural>) = thirukkurals.map { it.athikaram }.distinct()
@@ -70,7 +80,6 @@ data class ThirukkuralState(
     fun getCurrent(): Thirukkural = kurals[index]
     fun goNext() = goNext(kurals.size)
     fun goPrevious() = goPrevious(kurals.size)
-    fun getReset(): ThirukkuralState = this.copy(index = getReset(kurals.size))
 }
 
 data class FirstWordState(
@@ -130,16 +139,6 @@ interface HistoryState {
         println("${this::class} Current: $index to New: $nextIndex of Total: $maxIndex")
         index = nextIndex
     }
-    fun getReset(maxIndex: Int): Int {
-        if (history.isEmpty()) {
-            history = generateRandomList(maxIndex)
-            history.remove(index)
-            history.add(index)
-        }
-        val nextIndex = history.last()
-        println("${this::class} Current: $index to New: $nextIndex of Total: $maxIndex")
-        return nextIndex
-    }
 }
 
 fun generateRandomList(maxIndex: Int): MutableList<Int> {
@@ -160,12 +159,8 @@ fun nextIndex(currentIndex: Int, maxIndex: Int): Int {
 
 fun fetchSource(): List<Thirukkural> {
     val sourceData = Thirukkural::class.java.classLoader.getResource("kurals.txt")!!.readText()
-//    val sourceUrl = "https://raw.githubusercontent.com/dreamuth/dreamuth.github.io/master/kurals.txt"
-//    val client = HttpClient(CIO)
-//    val sourceData = client.get<String>(sourceUrl)
     val thirukkurals = readSource(sourceData)
     println("version: 2020-12-19.1")
-//    println("Source: $sourceUrl loaded")
     return thirukkurals
 }
 

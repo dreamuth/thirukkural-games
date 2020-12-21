@@ -47,16 +47,20 @@ data class Thirukkural(
 data class KuralOnly(val firstLine: String, val secondLine: String)
 
 @Serializable
-data class PracticeData(val topic: Topic, val question: String, val thirukkurals: List<Thirukkural>)
+data class AdminQuestion(
+    val topic: Topic,
+    val question: String,
+    val thirukkurals: List<Thirukkural>,
+    val question2: String? = null
+)
 
 @Serializable
-data class PracticeKuralData(val topic: Topic, val question: KuralOnly, val thirukkurals: List<Thirukkural>)
+data class GuestQuestion(val topic: Topic, val question: String, val question2: String? = null)
 
 @Serializable
 data class RoomNamesData(val roomNames: List<String>)
 
 enum class ServerCommand {
-    PRACTICE,
     CREATE_ROOM,
     ADMIN_JOIN_ROOM,
     GUEST_JOIN_ROOM,
@@ -67,12 +71,16 @@ enum class ServerCommand {
 }
 
 enum class ClientCommand {
-    PRACTICE_RESPONSE,
     PRACTICE_KURAL_RESPONSE,
     ADMIN_ROOM_RESPONSE,
     CREATE_ROOM_EXISTS,
+    JOIN_ROOM_NOT_EXISTS,
+    INVALID_PASSCODE,
     SIGN_OUT,
-    ACTIVE_ROOMS
+    ACTIVE_ROOMS,
+    ERROR_CLOSE_BROWSER,
+    ADMIN_QUESTION,
+    GUEST_QUESTION
 }
 
 enum class Topic(val tamil: String) {

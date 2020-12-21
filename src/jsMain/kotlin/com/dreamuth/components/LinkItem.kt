@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dreamuth.login
+package com.dreamuth.components
 
 import kotlinx.css.Color
 import kotlinx.css.color

@@ -28,7 +28,6 @@ external interface StringQuestionProps: RProps {
     var question: String
     var questionSize: LinearDimension
     var thirukkurals: List<Thirukkural>
-    var showAnswer: Boolean
 }
 
 class StringQuestion : RComponent<StringQuestionProps, RState>() {
@@ -37,11 +36,9 @@ class StringQuestion : RComponent<StringQuestionProps, RState>() {
             question = props.question
             questionSize = props.questionSize
         }
-        if (props.showAnswer) {
-            props.thirukkurals.forEach { thirukkural ->
-                kuralDisplay {
-                    selectedThirukkural = thirukkural
-                }
+        props.thirukkurals.forEach { thirukkural ->
+            kuralDisplay {
+                selectedThirukkural = thirukkural
             }
         }
     }

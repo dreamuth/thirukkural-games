@@ -14,4 +14,18 @@
  * limitations under the License.
  */
 
+pluginManagement {
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id.startsWith("com.google.cloud.tools.appengine")) {
+                useModule("com.google.cloud.tools:appengine-gradle-plugin:${requested.version}")
+            }
+        }
+    }
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
 rootProject.name = "thirukkural-games"

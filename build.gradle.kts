@@ -20,6 +20,8 @@ plugins {
     kotlin("multiplatform") version "1.4.21"
     application
     kotlin("plugin.serialization") version "1.4.21"
+    id("com.github.johnrengelman.shadow") version "6.1.0"
+    id("com.google.cloud.tools.appengine-appyaml") version "2.4.1"
 }
 
 group = "com.dreamuth"
@@ -103,7 +105,8 @@ kotlin {
 }
 
 application {
-    mainClass.set("com.dreamuth.ServerKt")
+    mainClassName = "com.dreamuth.ServerKt"
+//    mainClass.set("com.dreamuth.ServerKt")
 }
 
 tasks.getByName<Jar>("jvmJar") {
@@ -115,6 +118,22 @@ tasks.getByName<Jar>("jvmJar") {
     val webpackTask = tasks.getByName<KotlinWebpack>(taskName)
     dependsOn(webpackTask) // make sure JS gets compiled first
     from(File(webpackTask.destinationDirectory, webpackTask.outputFileName)) // bring output file along into the JAR
+}
+
+tasks.getByName<Jar>("shadowJar") {
+    val taskName = if (project.hasProperty("isProduction")) {
+        "jsBrowserProductionWebpack"
+    } else {
+        "jsBrowserDevelopmentWebpack"
+    }
+    val webpackTask = tasks.getByName<KotlinWebpack>(taskName)
+    dependsOn(webpackTask)
+    from(File(webpackTask.destinationDirectory, webpackTask.outputFileName))
+    from(File(webpackTask.destinationDirectory, webpackTask.outputFileName + ".map"))
+}
+
+tasks.getByName("installShadowDist") {
+    dependsOn(tasks.getByName<Jar>("jvmJar"))
 }
 
 tasks.getByName<JavaExec>("run") {
@@ -136,4 +155,18 @@ distributions {
             }
         }
     }
+}
+
+appengine {
+    stage.setArtifact("$buildDir/libs/${project.name}-${project.version}-all.jar")
+    deploy {
+        projectId = "thirukkural-games"
+        version = "v2"
+        stopPreviousVersion = true
+        promote = true
+    }
+}
+
+configure<com.google.cloud.tools.gradle.appengine.appyaml.AppEngineAppYamlExtension> {
+    stage.setAppEngineDirectory("src/jvmMain/appengine")
 }

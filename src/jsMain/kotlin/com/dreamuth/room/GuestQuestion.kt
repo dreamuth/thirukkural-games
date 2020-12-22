@@ -38,34 +38,43 @@ class GuestQuestion : RComponent<GuestQuestionProps, RState>() {
     override fun RBuilder.render() {
         styledDiv {
             css {
-                classes = mutableListOf("card bg-success text-white m-2 text-center")
+                classes = mutableListOf("container-md")
             }
             styledDiv {
                 css {
-                    classes = mutableListOf("card-header")
-                    fontSize = 1.5.rem
+                    classes = mutableListOf("card bg-success text-white m-2 text-center")
                 }
-                +props.topic.tamil
-            }
-            styledDiv {
-                css {
-                    classes = mutableListOf("card-body text-dark bg-warning")
-
-                }
-                styledP {
+                styledDiv {
                     css {
-                        classes = mutableListOf("card-text")
-                        fontSize = 2.rem
+                        classes = mutableListOf("card-header")
+                        fontSize = 1.5.rem
                     }
-                    +props.question
+                    +props.topic.tamil
                 }
-                props.question2?.let { question2 ->
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf("card bg-warning text-dark m-2 text-center")
+                }
+                styledDiv {
+                    css {
+                        classes = mutableListOf("card-body")
+                    }
                     styledP {
                         css {
                             classes = mutableListOf("card-text")
                             fontSize = 2.rem
                         }
-                        +question2
+                        +props.question
+                    }
+                    props.question2?.let { question2 ->
+                        styledP {
+                            css {
+                                classes = mutableListOf("card-text")
+                                fontSize = 2.rem
+                            }
+                            +question2
+                        }
                     }
                 }
             }

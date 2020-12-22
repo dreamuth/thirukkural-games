@@ -20,8 +20,10 @@ import com.dreamuth.KuralOnly
 import com.dreamuth.Thirukkural
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
+import kotlinx.css.pct
 import kotlinx.css.px
 import kotlinx.css.rem
+import kotlinx.css.width
 import react.RBuilder
 import react.RProps
 import react.child
@@ -79,10 +81,14 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
         } else {
             styledDiv {
                 css {
-                    classes = mutableListOf("d-flex justify-content-center align-items-center pb-5")
+                    classes = mutableListOf("m-1")
                 }
                 styledImg {
                     attrs.src = "img/thiruvalluvar.jpg"
+                    css {
+                        classes = mutableListOf("")
+                        width = 100.pct
+                    }
                 }
             }
         }

@@ -17,14 +17,15 @@
 package com.dreamuth.login
 
 import com.dreamuth.AdminJoinRoom
-import com.dreamuth.Room
 import com.dreamuth.GameState
 import com.dreamuth.GuestJoinRoom
+import com.dreamuth.Room
 import com.dreamuth.ServerCommand
 import com.dreamuth.Thirukkural
 import com.dreamuth.Topic
 import com.dreamuth.room.adminRoom
 import com.dreamuth.room.guestQuestion
+import com.dreamuth.room.roomInfo
 import com.dreamuth.scope
 import com.dreamuth.wsClient
 import kotlinx.coroutines.launch
@@ -34,6 +35,8 @@ import react.RBuilder
 import react.RProps
 import react.child
 import react.functionalComponent
+import styled.css
+import styled.styledDiv
 
 external interface GameStateCompProps: RProps {
     var gameState: GameState
@@ -43,6 +46,8 @@ external interface GameStateCompProps: RProps {
     var question: String
     var question2: String?
     var thirukkurals: List<Thirukkural>
+    var adminPasscode: String?
+    var guestPasscode: String?
     var createRoomErrorMsg: String?
     var joinRoomErrorMsg: String?
 }
@@ -91,24 +96,48 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
             }
         }
         GameState.ADMIN_ROOM -> {
-            adminRoom {
-                topic = props.topic
-                question = props.question
-                question2 = props.question2
-                thirukkurals = props.thirukkurals
-                onTopicClick = {
-                    scope.launch {
-                        wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
+            styledDiv {
+                css {
+                    classes = mutableListOf("row")
+                }
+                styledDiv {
+                    css {
+                        classes = mutableListOf("col-9 pr-0")
+                    }
+                    adminRoom {
+                        topic = props.topic
+                        question = props.question
+                        question2 = props.question2
+                        thirukkurals = props.thirukkurals
+                        onTopicClick = {
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
+                            }
+                        }
+                        onPreviousClick = {
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.PREVIOUS)
+                            }
+                        }
+                        onNextClick = {
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.NEXT)
+                            }
+                        }
                     }
                 }
-                onPreviousClick = {
-                    scope.launch {
-                        wsClient.trySend(ServerCommand.PREVIOUS)
+                styledDiv {
+                    css {
+                        classes = mutableListOf("col-3 pl-0")
                     }
-                }
-                onNextClick = {
-                    scope.launch {
-                        wsClient.trySend(ServerCommand.NEXT)
+                    if (props.roomName != null
+                        && props.adminPasscode != null
+                        && props.guestPasscode != null) {
+                        roomInfo {
+                            roomName = props.roomName!!
+                            adminPasscode = props.adminPasscode!!
+                            guestPasscode = props.guestPasscode!!
+                        }
                     }
                 }
             }

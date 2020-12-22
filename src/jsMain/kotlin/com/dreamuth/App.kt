@@ -189,7 +189,7 @@ class App : RComponent<RProps, AppState> () {
                 }
                 styledDiv {
                     css {
-                        classes = mutableListOf("container-lg")
+                        classes = mutableListOf("container-fluid")
                     }
                     gameStateComp {
                         gameState = state.gameState
@@ -199,18 +199,10 @@ class App : RComponent<RProps, AppState> () {
                         question = state.question
                         question2 = state.question2
                         thirukkurals = state.thirukkurals
+                        adminPasscode = state.adminPasscode
+                        guestPasscode = state.guestPasscode
                         createRoomErrorMsg = state.createRoomErrorMsg
                         joinRoomErrorMsg = state.joinRoomErrorMsg
-                    }
-                    if (state.isAdminRoom
-                        && state.roomName != null
-                        && state.adminPasscode != null
-                        && state.guestPasscode != null) {
-                        roomInfo {
-                            roomName = state.roomName!!
-                            adminPasscode = state.adminPasscode!!
-                            guestPasscode = state.guestPasscode!!
-                        }
                     }
                 }
             }

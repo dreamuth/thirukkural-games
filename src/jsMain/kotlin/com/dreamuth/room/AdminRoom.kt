@@ -41,36 +41,40 @@ external interface AdminRoomProps: RProps {
 
 private var adminRoom = functionalComponent<AdminRoomProps> { props ->
     styledDiv {
-        // Desktop
         css {
+            classes = mutableListOf("")
+        }
+        styledDiv {
+            // Desktop
+            css {
 //            classes = mutableListOf("d-none d-lg-block")
-        }
-        titleBar {
-            selectedTopic = props.topic
-            firstRowStyle = "col pl-0 pr-0"
-            topicButtonWidth = 200.px
-            secondRowStyle = "col-md-auto pr-0"
-            navigationWidth = 120.px
-            navigationBtnWidth = 120.px
-            onTopicClick = { it -> props.onTopicClick(it) }
-            onPreviousClick = props.onPreviousClick
-            onNextClick = { props.onNextClick() }
-        }
-    }
-
-    when (props.topic) {
-        Topic.Kural -> {
-            kuralQuestion {
-                question = KuralOnly(props.question, props.question2!!)
-                questionSize = 2.rem
-                thirukkurals = props.thirukkurals
+            }
+            titleBar {
+                selectedTopic = props.topic
+                firstRowStyle = "col pl-0 pr-0"
+                topicButtonWidth = 200.px
+                secondRowStyle = "col-md-auto pr-0"
+                navigationWidth = 120.px
+                navigationBtnWidth = 120.px
+                onTopicClick = { it -> props.onTopicClick(it) }
+                onPreviousClick = props.onPreviousClick
+                onNextClick = { props.onNextClick() }
             }
         }
-        else -> {
-            stringQuestion {
-                question = props.question
-                questionSize = 2.rem
-                thirukkurals = props.thirukkurals
+        when (props.topic) {
+            Topic.Kural -> {
+                kuralQuestion {
+                    question = KuralOnly(props.question, props.question2!!)
+                    questionSize = 2.rem
+                    thirukkurals = props.thirukkurals
+                }
+            }
+            else -> {
+                stringQuestion {
+                    question = props.question
+                    questionSize = 2.rem
+                    thirukkurals = props.thirukkurals
+                }
             }
         }
     }

@@ -43,15 +43,17 @@ class RoomInfo : RComponent<RoomInfoProps, RState>() {
         styledDiv {
             css {
                 classes = mutableListOf("card text-white bg-dark m-2")
-                position = Position.absolute
-                bottom = 3.px
-                minWidth = 250.px
             }
             styledDiv {
                 css {
-                    classes = mutableListOf("card-body")
+                    classes = mutableListOf("card-header p-2")
                 }
                 keyValue("Room name", props.roomName)
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf("card-body p-2")
+                }
                 keyValue("Admin passcode", props.adminPasscode)
                 keyValue("Guest passcode", props.guestPasscode)
             }
@@ -61,11 +63,11 @@ class RoomInfo : RComponent<RoomInfoProps, RState>() {
     private fun StyledDOMBuilder<DIV>.keyValue(key: String, value: String) {
         styledDiv {
             css {
-                classes = mutableListOf("d-flex justify-content-between")
+                classes = mutableListOf("d-flex justify-content-between align-items-center")
             }
             styledP {
                 css {
-                    classes = mutableListOf("card-text")
+                    classes = mutableListOf("card-text mb-0")
                 }
                 +"$key: "
             }

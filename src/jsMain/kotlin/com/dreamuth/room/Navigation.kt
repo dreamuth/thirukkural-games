@@ -16,6 +16,11 @@
 
 package com.dreamuth.room
 
+import com.dreamuth.ServerCommand
+import com.dreamuth.TimerState
+import com.dreamuth.scope
+import com.dreamuth.wsClient
+import kotlinx.coroutines.launch
 import kotlinx.css.LinearDimension
 import kotlinx.css.height
 import kotlinx.css.px
@@ -34,48 +39,61 @@ import styled.styledSpan
 
 external interface NavigationProps: RProps {
     var buttonSize: LinearDimension
-    var smallBtnWidth: LinearDimension
-//    var timer: Timer
-    var onTimerClick: () -> Unit
-    var onPreviousClick: () -> Unit
-    var onResetClick: () -> Unit
-    var onNextClick: () -> Unit
+    var timerState: TimerState
 }
 
 class Navigation : RComponent<NavigationProps, RState>() {
     override fun RBuilder.render() {
         styledButton {
+            val activeStyle = if (props.timerState.isLive) "active" else ""
+            css {
+                classes = mutableListOf("btn btn-danger mr-2 $activeStyle")
+                width = props.buttonSize
+                attrs {
+                    disabled = props.timerState.time <= 0
+                }
+            }
+            if (props.timerState.isLive) +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60} " else +"Start"
+            attrs {
+                onClickFunction = {
+                    if (!props.timerState.isLive) {
+                        scope.launch {
+                            wsClient.trySend(ServerCommand.START_GAME)
+                        }
+                    }
+                }
+            }
+        }
+        styledButton {
             css {
                 classes = mutableListOf("btn btn-success mr-2")
                 width = props.buttonSize
+                attrs {
+                    disabled = props.timerState.time <= 0
+                }
             }
             attrs {
                 onClickFunction = {
-                    props.onPreviousClick()
+                    scope.launch {
+                        wsClient.trySend(ServerCommand.PREVIOUS)
+                    }
                 }
             }
             +"முன்பு"
         }
-//        styledButton {
-//            css {
-//                classes = mutableListOf("btn btn-danger mr-2")
-//                width = props.buttonSize
-//            }
-//            +"பதில்"
-//            attrs {
-//                onClickFunction = {
-//                    props.onShowAnswerClick()
-//                }
-//            }
-//        }
         styledButton {
             css {
                 classes = mutableListOf("btn btn-success")
                 width = props.buttonSize
+                attrs {
+                    disabled = props.timerState.time <= 0
+                }
             }
             attrs {
                 onClickFunction = {
-                    props.onNextClick()
+                    scope.launch {
+                        wsClient.trySend(ServerCommand.NEXT)
+                    }
                 }
             }
             +"அடுத்து"

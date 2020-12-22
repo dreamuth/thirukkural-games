@@ -65,6 +65,7 @@ class GameState(private val logger: Logger) {
                 }
                 val questionState = rooms.remove(userInfo.roomName)
                 questionState?.let {
+                    questionState.timerState = TimerState()
                     println("Removing room ${userInfo.roomName}")
                     sendActiveRoomsToAllUsers()
                 }
@@ -148,6 +149,12 @@ class GameState(private val logger: Logger) {
         return users.values
             .filter { it.roomName == roomName }
             .filter { it.adminPasscode == null }
+            .map { it.session.session }
+    }
+
+    fun getSessionsForRoom(roomName: String): List<WebSocketSession> {
+        return users.values
+            .filter { it.roomName == roomName }
             .map { it.session.session }
     }
 }

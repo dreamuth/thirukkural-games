@@ -16,8 +16,13 @@
 
 package com.dreamuth.room
 
+import com.dreamuth.ServerCommand
+import com.dreamuth.TimerState
 import com.dreamuth.Topic
 import com.dreamuth.components.dropdown
+import com.dreamuth.scope
+import com.dreamuth.wsClient
+import kotlinx.coroutines.launch
 import kotlinx.css.LinearDimension
 import kotlinx.css.width
 import react.RBuilder
@@ -29,10 +34,8 @@ import styled.css
 import styled.styledDiv
 
 external interface TitleBarProps: RProps {
-    var persons: List<String>
-    var selectedPerson: String
+    var timerState: TimerState
     var selectedTopic: Topic
-    var showAnswer: Boolean
     var firstRowStyle: String
     var firstRowWidth: LinearDimension?
     var personButtonWidth: LinearDimension?
@@ -40,17 +43,8 @@ external interface TitleBarProps: RProps {
     var secondOptionalRowStyle: String?
     var secondRowStyle: String
     var secondRowWidth: LinearDimension?
-    var allKuralsWidth: LinearDimension?
     var navigationBtnWidth: LinearDimension
     var navigationWidth: LinearDimension
-    var onPersonClick: (String) -> Unit
-    var onTopicClick: (Topic) -> Unit
-    var onFilterClick: (Int) -> Unit
-    var onPreviousClick: () -> Unit
-    var onResetClick: () -> Unit
-    var onNextClick: () -> Unit
-    var onTimerClick: () -> Unit
-    var onRetryClick: () -> Unit
 }
 
 class TitleBar : RComponent<TitleBarProps, RState>() {
@@ -82,7 +76,9 @@ class TitleBar : RComponent<TitleBarProps, RState>() {
                         )
                         selectedName = props.selectedTopic.tamil
                         onDropdownClick = { _, name ->
-                            props.onTopicClick(Topic.getTopic(name))
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + Topic.getTopic(name))
+                            }
                         }
                     }
                 }
@@ -94,26 +90,7 @@ class TitleBar : RComponent<TitleBarProps, RState>() {
                 }
                 navigation {
                     buttonSize = props.navigationWidth
-                    smallBtnWidth = props.navigationBtnWidth
-//                    timer = props.timer
-//                    onShowAnswerClick = {
-//                        props.onShowAnswerClick(!props.showAnswer)
-//                    }
-                    onPreviousClick = {
-//                        props.onShowAnswerClick(false)
-                        props.onPreviousClick()
-                    }
-                    onResetClick = {
-//                        props.onShowAnswerClick(false)
-                        props.onResetClick()
-                    }
-                    onNextClick = {
-//                        props.onShowAnswerClick(false)
-                        props.onNextClick()
-                    }
-                    onTimerClick = {
-                        props.onTimerClick()
-                    }
+                    timerState = props.timerState
                 }
             }
         }

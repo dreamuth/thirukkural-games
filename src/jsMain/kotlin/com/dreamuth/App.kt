@@ -17,7 +17,6 @@
 package com.dreamuth
 
 import com.dreamuth.login.gameStateComp
-import com.dreamuth.room.roomInfo
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.MainScope
@@ -43,6 +42,7 @@ enum class GameState {
     NONE,
     CREATE,
     JOIN,
+    CATEGORY_SELECTION,
     ADMIN_ROOM,
     GUEST_ROOM
 }
@@ -50,6 +50,7 @@ enum class GameState {
 external interface AppState: RState {
     var isLoaded: Boolean
     var gameState: GameState
+    var timerState: TimerState
     var topic: Topic
     var question: String
     var question2: String?
@@ -73,6 +74,7 @@ class App : RComponent<RProps, AppState> () {
                 thirukkurals = listOf()
                 roomNames = listOf()
                 isAdminRoom = false
+                timerState = TimerState()
                 isLoaded = true
             }
             wsClient.initConnection()
@@ -114,22 +116,36 @@ class App : RComponent<RProps, AppState> () {
                         val data = message.removePrefix(ClientCommand.ADMIN_QUESTION.name)
                         val adminQuestion = Json.decodeFromString<AdminQuestion>(data)
                         setState {
+                            if (topic != adminQuestion.topic) {
+                                timerState = TimerState()
+                            }
                             topic = adminQuestion.topic
                             question = adminQuestion.question
                             question2 = adminQuestion.question2
                             thirukkurals = adminQuestion.thirukkurals
                             gameState = GameState.ADMIN_ROOM
+//                            gameState = GameState.CATEGORY_SELECTION
                         }
                     }
                     message.startsWith(ClientCommand.GUEST_QUESTION.name) -> {
                         val data = message.removePrefix(ClientCommand.GUEST_QUESTION.name)
                         val guestQuestion = Json.decodeFromString<GuestQuestion>(data)
                         setState {
+                            if (topic != guestQuestion.topic) {
+                                timerState = TimerState()
+                            }
                             topic = guestQuestion.topic
                             question = guestQuestion.question
                             question2 = guestQuestion.question2
                             thirukkurals = listOf()
                             gameState = GameState.GUEST_ROOM
+                        }
+                    }
+                    message.startsWith(ClientCommand.TIME_UPDATE.name) -> {
+                        val data = message.removePrefix(ClientCommand.TIME_UPDATE.name)
+                        val receivedTimerState = Json.decodeFromString<TimerState>(data)
+                        setState {
+                            timerState = receivedTimerState
                         }
                     }
                     message.startsWith(ClientCommand.SIGN_OUT.name) -> {
@@ -196,6 +212,7 @@ class App : RComponent<RProps, AppState> () {
                         roomName = state.roomName
                         roomNames = state.roomNames
                         topic = state.topic
+                        timerState = state.timerState
                         question = state.question
                         question2 = state.question2
                         thirukkurals = state.thirukkurals

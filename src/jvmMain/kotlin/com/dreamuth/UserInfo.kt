@@ -50,6 +50,7 @@ data class UserInfo(
 data class QuestionState(
     var selectedTopic: Topic,
     var thirukkurals: List<Thirukkural>,
+    var timerState: TimerState,
     var athikaramState: AthikaramState,
     var thirukkuralState: ThirukkuralState,
     var firstWordState: FirstWordState,

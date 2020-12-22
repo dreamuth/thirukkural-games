@@ -22,11 +22,13 @@ import com.dreamuth.GuestJoinRoom
 import com.dreamuth.Room
 import com.dreamuth.ServerCommand
 import com.dreamuth.Thirukkural
+import com.dreamuth.TimerState
 import com.dreamuth.Topic
 import com.dreamuth.room.adminRoom
 import com.dreamuth.room.guestQuestion
 import com.dreamuth.room.roomInfo
 import com.dreamuth.scope
+import com.dreamuth.student.studentInfo
 import com.dreamuth.wsClient
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -42,6 +44,7 @@ external interface GameStateCompProps: RProps {
     var gameState: GameState
     var roomNames: List<String>
     var roomName: String?
+    var timerState: TimerState
     var topic: Topic
     var question: String
     var question2: String?
@@ -95,6 +98,12 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                 }
             }
         }
+        GameState.CATEGORY_SELECTION -> {
+            studentInfo {
+                availableCategories = listOf(Topic.Kural, Topic.KuralPorul, Topic.FirstWord)
+                selectedCategory = Topic.KuralPorul
+            }
+        }
         GameState.ADMIN_ROOM -> {
             styledDiv {
                 css {
@@ -106,24 +115,10 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                     }
                     adminRoom {
                         topic = props.topic
+                        timerState = props.timerState
                         question = props.question
                         question2 = props.question2
                         thirukkurals = props.thirukkurals
-                        onTopicClick = {
-                            scope.launch {
-                                wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
-                            }
-                        }
-                        onPreviousClick = {
-                            scope.launch {
-                                wsClient.trySend(ServerCommand.PREVIOUS)
-                            }
-                        }
-                        onNextClick = {
-                            scope.launch {
-                                wsClient.trySend(ServerCommand.NEXT)
-                            }
-                        }
                     }
                 }
                 styledDiv {

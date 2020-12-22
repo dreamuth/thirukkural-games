@@ -18,6 +18,7 @@ package com.dreamuth.room
 
 import com.dreamuth.KuralOnly
 import com.dreamuth.Thirukkural
+import com.dreamuth.TimerState
 import com.dreamuth.Topic
 import kotlinx.css.px
 import kotlinx.css.rem
@@ -27,15 +28,14 @@ import react.child
 import react.functionalComponent
 import styled.css
 import styled.styledDiv
+import styled.styledImg
 
 external interface AdminRoomProps: RProps {
     var topic: Topic
+    var timerState: TimerState
     var question: String
     var question2: String?
     var thirukkurals: List<Thirukkural>
-    var onTopicClick: (Topic) -> Unit
-    var onPreviousClick: () -> Unit
-    var onNextClick: () -> Unit
 }
 
 
@@ -51,29 +51,38 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
             }
             titleBar {
                 selectedTopic = props.topic
+                timerState = props.timerState
                 firstRowStyle = "col pl-0 pr-0"
                 topicButtonWidth = 200.px
                 secondRowStyle = "col-md-auto pr-0"
                 navigationWidth = 120.px
                 navigationBtnWidth = 120.px
-                onTopicClick = { it -> props.onTopicClick(it) }
-                onPreviousClick = props.onPreviousClick
-                onNextClick = { props.onNextClick() }
             }
         }
-        when (props.topic) {
-            Topic.Kural -> {
-                kuralQuestion {
-                    question = KuralOnly(props.question, props.question2!!)
-                    questionSize = 2.rem
-                    thirukkurals = props.thirukkurals
+        if (props.timerState.isLive) {
+            when (props.topic) {
+                Topic.Kural -> {
+                    kuralQuestion {
+                        question = KuralOnly(props.question, props.question2!!)
+                        questionSize = 2.rem
+                        thirukkurals = props.thirukkurals
+                    }
+                }
+                else -> {
+                    stringQuestion {
+                        question = props.question
+                        questionSize = 2.rem
+                        thirukkurals = props.thirukkurals
+                    }
                 }
             }
-            else -> {
-                stringQuestion {
-                    question = props.question
-                    questionSize = 2.rem
-                    thirukkurals = props.thirukkurals
+        } else {
+            styledDiv {
+                css {
+                    classes = mutableListOf("d-flex justify-content-center align-items-center pb-5")
+                }
+                styledImg {
+                    attrs.src = "img/thiruvalluvar.jpg"
                 }
             }
         }

@@ -58,12 +58,16 @@ data class AdminQuestion(
 data class GuestQuestion(val topic: Topic, val question: String, val question2: String? = null)
 
 @Serializable
+data class TimerState(var isLive: Boolean = false, var time: Long = 30)
+
+@Serializable
 data class RoomNamesData(val roomNames: List<String>)
 
 enum class ServerCommand {
     CREATE_ROOM,
     ADMIN_JOIN_ROOM,
     GUEST_JOIN_ROOM,
+    START_GAME,
     NEXT,
     PREVIOUS,
     TOPIC_CHANGE,
@@ -81,7 +85,8 @@ enum class ClientCommand {
     SIGN_OUT,
     ACTIVE_ROOMS,
     ADMIN_QUESTION,
-    GUEST_QUESTION;
+    GUEST_QUESTION,
+    TIME_UPDATE;
 }
 
 enum class Topic(val tamil: String) {

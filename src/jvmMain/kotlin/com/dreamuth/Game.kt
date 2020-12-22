@@ -16,16 +16,20 @@
 
 package com.dreamuth
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
+import java.util.*
+import kotlin.concurrent.fixedRateTimer
 
 /**
  *
  * @author Uttran Ishtalingam
  */
-class Game(private val gameState: GameState, val logger: Logger) {
+class Game(private val gameState: GameState, private val logger: Logger) {
     suspend fun userJoin(userSession: UserSession) {
         gameState.userJoin(userSession)
     }
@@ -110,6 +114,27 @@ class Game(private val gameState: GameState, val logger: Logger) {
                     }
                 }
             }
+            command.startsWith(ServerCommand.START_GAME.name) -> {
+                val userInfo = gameState.getUserInfo(userSession)
+                userInfo?.let {
+                    val questionState = gameState.getQuestionState(userInfo.roomName)
+                    questionState?.let {
+                        questionState.timerState.isLive = true
+                        fixedRateTimer(name = "LiveTimer", daemon = true, period = 1000) {
+                            println("OnTimer: ${questionState.timerState.isLive} ${questionState.timerState.time}")
+                            questionState.timerState.time--
+                            if (questionState.timerState.isLive && questionState.timerState.time >= 0) {
+                                GlobalScope.launch {
+                                    sendTimeToAll(questionState, userInfo)
+                                }
+                            } else {
+                                this.cancel()
+                            }
+                        }
+                        sendTimeToAll(questionState, userInfo)
+                    }
+                }
+            }
             command.startsWith(ServerCommand.NEXT.name) -> {
                 val userInfo = gameState.getUserInfo(userSession)
                 userInfo?.let {
@@ -147,6 +172,7 @@ class Game(private val gameState: GameState, val logger: Logger) {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
                         questionState.selectedTopic = newTopic
+                        questionState.timerState = TimerState()
                         sendQuestionToAll(questionState, userInfo)
                     }
                 }
@@ -172,6 +198,7 @@ class Game(private val gameState: GameState, val logger: Logger) {
         return QuestionState(
             Topic.Athikaram,
             thirukkurals,
+            TimerState(),
             AthikaramState(thirukkurals),
             ThirukkuralState(thirukkurals),
             FirstWordState(thirukkurals),
@@ -204,6 +231,11 @@ class Game(private val gameState: GameState, val logger: Logger) {
         sendGuestQuestionToAllGuests(guestQuestion, userInfo)
     }
 
+    private suspend fun sendTimeToAll(questionState: QuestionState, userInfo: UserInfo) {
+//        logger.info(userInfo.session, "Sending time to room [${userInfo.roomName}]")
+        sendTimeToAll(questionState.timerState, userInfo)
+    }
+
     private suspend fun sendAdminQuestionToAllAdmins(adminQuestion: AdminQuestion, userInfo: UserInfo) {
         val adminMessage = ClientCommand.ADMIN_QUESTION.name + Json.encodeToString(adminQuestion)
         gameState.getAdminSessionsForRoom(userInfo.roomName).forEach { it.trySend(adminMessage) }
@@ -212,6 +244,11 @@ class Game(private val gameState: GameState, val logger: Logger) {
     private suspend fun sendGuestQuestionToAllGuests(guestQuestion: GuestQuestion, userInfo: UserInfo) {
         val guestMessage = ClientCommand.GUEST_QUESTION.name + Json.encodeToString(guestQuestion)
         gameState.getGuestSessionsForRoom(userInfo.roomName).forEach { it.trySend(guestMessage) }
+    }
+
+    private suspend fun sendTimeToAll(timerState: TimerState, userInfo: UserInfo) {
+        val message = ClientCommand.TIME_UPDATE.name + Json.encodeToString(timerState)
+        gameState.getSessionsForRoom(userInfo.roomName).forEach { it.trySend(message) }
     }
 
     private fun createAdminQuestion(roomState: QuestionState): AdminQuestion {

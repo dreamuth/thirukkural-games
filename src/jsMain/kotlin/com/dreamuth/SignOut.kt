@@ -16,6 +16,7 @@
 
 package com.dreamuth
 
+import kotlinx.coroutines.launch
 import kotlinx.css.Position
 import kotlinx.css.position
 import kotlinx.css.px
@@ -29,11 +30,7 @@ import react.functionalComponent
 import styled.css
 import styled.styledButton
 
-external interface HeaderProps: RProps {
-    var onSignOutBtnClick: () -> Unit
-}
-
-private var signOut = functionalComponent<HeaderProps> { props ->
+private var signOut = functionalComponent<RProps> {
     styledButton {
         css {
             classes = mutableListOf("btn btn-outline-primary mr-2")
@@ -43,14 +40,16 @@ private var signOut = functionalComponent<HeaderProps> { props ->
         }
         attrs {
             onClickFunction = {
-                props.onSignOutBtnClick()
+                scope.launch {
+                    wsClient.trySend(ServerCommand.SIGN_OUT)
+                }
             }
         }
         +"Sign out"
     }
 }
 
-fun RBuilder.signOut(handler: HeaderProps.() -> Unit) = child(signOut) {
+fun RBuilder.signOut(handler: RProps.() -> Unit) = child(signOut) {
     attrs {
         handler()
     }

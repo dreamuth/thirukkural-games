@@ -21,7 +21,7 @@ import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreateRoom(val roomName: String)
+data class Room(val name: String)
 
 @Serializable
 data class AdminRoomResponse(val adminPasscode: String, val guestPasscode: String)
@@ -71,16 +71,17 @@ enum class ServerCommand {
 }
 
 enum class ClientCommand {
-    PRACTICE_KURAL_RESPONSE,
-    ADMIN_ROOM_RESPONSE,
-    CREATE_ROOM_EXISTS,
-    JOIN_ROOM_NOT_EXISTS,
-    INVALID_PASSCODE,
+    ADMIN_CREATED_ROOM,
+    ADMIN_JOINED_ROOM,
+    GUEST_JOINED_ROOM,
+    ERROR_ROOM_EXISTS,
+    ERROR_ROOM_NOT_EXISTS,
+    ERROR_INVALID_PASSCODE,
+    ERROR_CLOSE_BROWSER,
     SIGN_OUT,
     ACTIVE_ROOMS,
-    ERROR_CLOSE_BROWSER,
     ADMIN_QUESTION,
-    GUEST_QUESTION
+    GUEST_QUESTION;
 }
 
 enum class Topic(val tamil: String) {

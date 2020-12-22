@@ -36,6 +36,7 @@ import styled.styledLabel
 import styled.styledSmall
 
 external interface CreateRoomProps: RProps {
+    var errorMsg: String?
     var onCreateBtnClick: (String) -> Unit
 }
 
@@ -52,6 +53,17 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
             onSubmitFunction = {
                 it.preventDefault()
                 props.onCreateBtnClick(roomName.trim())
+            }
+        }
+        props.errorMsg?.let { errorMsg ->
+            styledDiv {
+                css {
+                    classes = mutableListOf("alert alert-danger")
+                    attrs {
+                        role = "alert"
+                    }
+                }
+                +errorMsg
             }
         }
         styledDiv {

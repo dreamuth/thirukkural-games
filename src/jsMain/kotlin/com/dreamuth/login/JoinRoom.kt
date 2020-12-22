@@ -45,6 +45,7 @@ import styled.styledSmall
 external interface JoinRoomProps: RProps {
     var roomNames: List<String>
     var roomName: String?
+    var errorMsg: String?
     var onRoomNameChange: (String) -> Unit
     var onAdminJoinBtnClick: (String, String) -> Unit
     var onGuestJoinBtnClick: (String, String) -> Unit
@@ -69,6 +70,17 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                         props.onGuestJoinBtnClick(roomName, passcode)
                     }
                 }
+            }
+        }
+        props.errorMsg?.let { errorMsg ->
+            styledDiv {
+                css {
+                    classes = mutableListOf("alert alert-danger")
+                    attrs {
+                        role = "alert"
+                    }
+                }
+                +errorMsg
             }
         }
         if (props.roomNames.isEmpty()) {

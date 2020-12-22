@@ -38,12 +38,12 @@ class Game(private val gameState: GameState, val logger: Logger) {
         when {
             command.startsWith(ServerCommand.CREATE_ROOM.name) -> {
                 val data = command.removePrefix(ServerCommand.CREATE_ROOM.name)
-                val createRoom = Json.decodeFromString<CreateRoom>(data)
-                if (gameState.isExistingRoom(createRoom.roomName)) {
-                    logger.warn(userSession, ServerCommand.CREATE_ROOM, "Room ${createRoom.roomName} already exists")
-                    userSession.send(ClientCommand.CREATE_ROOM_EXISTS)
+                val room = Json.decodeFromString<Room>(data)
+                if (gameState.isExistingRoom(room.name)) {
+                    logger.warn(userSession, ServerCommand.CREATE_ROOM, "Room ${room.name} already exists")
+                    userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
                 } else {
-                    val userInfo = createAdminRoom(userSession, createRoom, gameState)
+                    val userInfo = createAdminRoom(userSession, room, gameState)
                     val activeUserInfo = gameState.addUserInfo(userInfo)
                     if (userInfo == activeUserInfo) {
                         val questionState = createQuestionState()
@@ -51,11 +51,11 @@ class Game(private val gameState: GameState, val logger: Logger) {
                         if (questionState == actualQuestionState) {
                             val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
                             logger.info(userSession, "Created the room [${activeUserInfo.roomName}]")
-                            userSession.send(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response))
+                            userSession.send(ClientCommand.ADMIN_CREATED_ROOM.name + Json.encodeToString(response))
                             sendAdminQuestionToMe(actualQuestionState, userInfo)
                         } else {
-                            logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room ${createRoom.roomName}")
-                            userSession.send(ClientCommand.CREATE_ROOM_EXISTS)
+                            logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room ${room.name}")
+                            userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
                         }
                     } else {
                         userSession.send(ClientCommand.ERROR_CLOSE_BROWSER)
@@ -67,10 +67,10 @@ class Game(private val gameState: GameState, val logger: Logger) {
                 val adminJoinRoom = Json.decodeFromString<AdminJoinRoom>(data)
                 if (!gameState.isExistingRoom(adminJoinRoom.roomName)) {
                     logger.warn(userSession, ServerCommand.ADMIN_JOIN_ROOM, "Room ${adminJoinRoom.roomName} no longer exists")
-                    userSession.send(ClientCommand.JOIN_ROOM_NOT_EXISTS)
+                    userSession.send(ClientCommand.ERROR_ROOM_NOT_EXISTS.name + Json.encodeToString(Room(adminJoinRoom.roomName)))
                 } else if (!gameState.isValidAdmin(adminJoinRoom)) {
                     logger.warn(userSession, ServerCommand.ADMIN_JOIN_ROOM, "Invalid passcode: ${adminJoinRoom.passcode}")
-                    userSession.send(ClientCommand.INVALID_PASSCODE)
+                    userSession.send(ClientCommand.ERROR_INVALID_PASSCODE)
                 } else {
                     val userInfo = UserInfo(
                         session = userSession,
@@ -81,7 +81,7 @@ class Game(private val gameState: GameState, val logger: Logger) {
                     )
                     gameState.addUserInfo(userInfo)
                     val response = AdminRoomResponse(userInfo.adminPasscode!!, userInfo.guestPasscode)
-                    userSession.send(ClientCommand.ADMIN_ROOM_RESPONSE.name + Json.encodeToString(response))
+                    userSession.send(ClientCommand.ADMIN_JOINED_ROOM.name + Json.encodeToString(response))
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
                         sendAdminQuestionToMe(questionState, userInfo)
                     }
@@ -92,10 +92,10 @@ class Game(private val gameState: GameState, val logger: Logger) {
                 val guestJoinRoom = Json.decodeFromString<GuestJoinRoom>(data)
                 if (!gameState.isExistingRoom(guestJoinRoom.roomName)) {
                     logger.warn(userSession, ServerCommand.GUEST_JOIN_ROOM, "Room ${guestJoinRoom.roomName} no longer exists")
-                    userSession.send(ClientCommand.JOIN_ROOM_NOT_EXISTS)
+                    userSession.send(ClientCommand.ERROR_ROOM_NOT_EXISTS.name + Json.encodeToString(Room(guestJoinRoom.roomName)))
                 } else if (!gameState.isValidGuest(guestJoinRoom)) {
                     logger.warn(userSession, ServerCommand.GUEST_JOIN_ROOM, "Invalid passcode: ${guestJoinRoom.passcode}")
-                    userSession.send(ClientCommand.INVALID_PASSCODE)
+                    userSession.send(ClientCommand.ERROR_INVALID_PASSCODE)
                 } else {
                     val userInfo = UserInfo(
                         session = userSession,
@@ -104,6 +104,7 @@ class Game(private val gameState: GameState, val logger: Logger) {
                         guestPasscode = guestJoinRoom.passcode
                     )
                     gameState.addUserInfo(userInfo)
+                    userSession.send(ClientCommand.GUEST_JOINED_ROOM.name)
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
                         sendGuestQuestionToMe(questionState, userInfo)
                     }
@@ -158,9 +159,9 @@ class Game(private val gameState: GameState, val logger: Logger) {
         }
     }
 
-    private fun createAdminRoom(userSession: UserSession, createRoom: CreateRoom, gameState: GameState) = UserInfo(
+    private fun createAdminRoom(userSession: UserSession, room: Room, gameState: GameState) = UserInfo(
         session = userSession,
-        roomName = createRoom.roomName,
+        roomName = room.name,
         userType = UserType.ADMIN,
         adminPasscode = gameState.createAdminPasscode(),
         guestPasscode = gameState.createGuestPasscode()

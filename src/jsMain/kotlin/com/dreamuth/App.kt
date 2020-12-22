@@ -16,9 +16,7 @@
 
 package com.dreamuth
 
-import com.dreamuth.login.gameMode
-import com.dreamuth.room.adminRoom
-import com.dreamuth.room.guestQuestion
+import com.dreamuth.login.gameStateComp
 import com.dreamuth.room.roomInfo
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
@@ -29,7 +27,6 @@ import kotlinx.css.backgroundColor
 import kotlinx.css.height
 import kotlinx.css.pct
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import react.RBuilder
 import react.RComponent
@@ -56,12 +53,14 @@ external interface AppState: RState {
     var topic: Topic
     var question: String
     var question2: String?
-    var kurals: List<Thirukkural>
+    var thirukkurals: List<Thirukkural>
     var roomName: String?
     var roomNames: List<String>
     var isAdminRoom: Boolean
     var adminPasscode: String?
     var guestPasscode: String?
+    var createRoomErrorMsg: String?
+    var joinRoomErrorMsg: String?
 }
 
 class App : RComponent<RProps, AppState> () {
@@ -71,7 +70,7 @@ class App : RComponent<RProps, AppState> () {
                 gameState = GameState.NONE
                 topic = Topic.Athikaram
                 question = "Loading..."
-                kurals = listOf()
+                thirukkurals = listOf()
                 roomNames = listOf()
                 isAdminRoom = false
                 isLoaded = true
@@ -89,10 +88,23 @@ class App : RComponent<RProps, AppState> () {
                             else roomNamesData.roomNames.firstOrNull()
                         }
                     }
-                    message.startsWith(ClientCommand.ADMIN_ROOM_RESPONSE.name) -> {
-                        val data = message.removePrefix(ClientCommand.ADMIN_ROOM_RESPONSE.name)
+                    message.startsWith(ClientCommand.ADMIN_CREATED_ROOM.name) -> {
+                        val data = message.removePrefix(ClientCommand.ADMIN_CREATED_ROOM.name)
                         val adminRoomResponse = Json.decodeFromString<AdminRoomResponse>(data)
                         setState {
+                            createRoomErrorMsg = null
+                            joinRoomErrorMsg = null
+                            isAdminRoom = true
+                            adminPasscode = adminRoomResponse.adminPasscode
+                            guestPasscode = adminRoomResponse.guestPasscode
+                        }
+                    }
+                    message.startsWith(ClientCommand.ADMIN_JOINED_ROOM.name) -> {
+                        val data = message.removePrefix(ClientCommand.ADMIN_JOINED_ROOM.name)
+                        val adminRoomResponse = Json.decodeFromString<AdminRoomResponse>(data)
+                        setState {
+                            createRoomErrorMsg = null
+                            joinRoomErrorMsg = null
                             isAdminRoom = true
                             adminPasscode = adminRoomResponse.adminPasscode
                             guestPasscode = adminRoomResponse.guestPasscode
@@ -105,7 +117,7 @@ class App : RComponent<RProps, AppState> () {
                             topic = adminQuestion.topic
                             question = adminQuestion.question
                             question2 = adminQuestion.question2
-                            kurals = adminQuestion.thirukkurals
+                            thirukkurals = adminQuestion.thirukkurals
                             gameState = GameState.ADMIN_ROOM
                         }
                     }
@@ -116,7 +128,7 @@ class App : RComponent<RProps, AppState> () {
                             topic = guestQuestion.topic
                             question = guestQuestion.question
                             question2 = guestQuestion.question2
-                            kurals = listOf()
+                            thirukkurals = listOf()
                             gameState = GameState.GUEST_ROOM
                         }
                     }
@@ -125,8 +137,33 @@ class App : RComponent<RProps, AppState> () {
                             gameState = GameState.NONE
                             topic = Topic.Athikaram
                             question = "Loading..."
-                            kurals = listOf()
+                            thirukkurals = listOf()
                             isAdminRoom = false
+                        }
+                    }
+                    message.startsWith(ClientCommand.GUEST_JOINED_ROOM.name) -> {
+                        setState {
+                            createRoomErrorMsg = null
+                            joinRoomErrorMsg = null
+                        }
+                    }
+                    message.startsWith(ClientCommand.ERROR_ROOM_EXISTS.name) -> {
+                        val data = message.removePrefix(ClientCommand.ERROR_ROOM_EXISTS.name)
+                        val room = Json.decodeFromString<Room>(data)
+                        setState {
+                            createRoomErrorMsg = "Room [${room.name}] already exists. Please use different name"
+                        }
+                    }
+                    message.startsWith(ClientCommand.ERROR_ROOM_NOT_EXISTS.name) -> {
+                        val data = message.removePrefix(ClientCommand.ERROR_ROOM_EXISTS.name)
+                        val room = Json.decodeFromString<Room>(data)
+                        setState {
+                            joinRoomErrorMsg = "Select room [${room.name}] no longer exists"
+                        }
+                    }
+                    message.startsWith(ClientCommand.ERROR_INVALID_PASSCODE.name) -> {
+                        setState {
+                            joinRoomErrorMsg = "Invalid passcode"
                         }
                     }
                 }
@@ -147,89 +184,23 @@ class App : RComponent<RProps, AppState> () {
                     }
                     +"திருக்குறள் விளையாட்டு"
                 }
+                if (state.gameState != GameState.NONE) {
+                    signOut { }
+                }
                 styledDiv {
                     css {
                         classes = mutableListOf("container-lg")
                     }
-                    if (state.gameState != GameState.NONE) {
-                        signOut {
-                            onSignOutBtnClick = {
-                                scope.launch {
-                                    wsClient.trySend(ServerCommand.SIGN_OUT)
-                                }
-                            }
-                        }
-                    }
-                    when (state.gameState) {
-                        GameState.NONE -> {
-                            gameMode {
-                                roomNames = state.roomNames
-                                roomName = state.roomName
-                                onRoomNameChange = {
-                                    roomName = it
-                                }
-                                onCreateBtnClick = { name ->
-                                    println("sending ${ServerCommand.CREATE_ROOM}...")
-                                    scope.launch {
-                                        wsClient.trySend(
-                                            ServerCommand.CREATE_ROOM.name + Json.encodeToString(CreateRoom(name)
-                                            )
-                                        )
-                                    }
-                                }
-                                onAdminJoinBtnClick = { name, passcode ->
-                                    println("sending ${ServerCommand.ADMIN_JOIN_ROOM}...")
-                                    scope.launch {
-                                        wsClient.trySend(
-                                            ServerCommand.ADMIN_JOIN_ROOM.name + Json.encodeToString(
-                                                AdminJoinRoom(name, passcode)
-                                            )
-                                        )
-                                    }
-                                }
-                                onGuestJoinBtnClick = { name, passcode ->
-                                    println("sending ${ServerCommand.GUEST_JOIN_ROOM}...")
-                                    scope.launch {
-                                        wsClient.trySend(
-                                            ServerCommand.GUEST_JOIN_ROOM.name + Json.encodeToString(
-                                                GuestJoinRoom(name, passcode)
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        GameState.ADMIN_ROOM -> {
-                            adminRoom {
-                                topic = state.topic
-                                question = state.question
-                                question2 = state.question2
-                                thirukkurals = state.kurals
-                                onTopicClick = {
-                                    scope.launch {
-                                        wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + it.name)
-                                    }
-                                }
-                                onPreviousClick = {
-                                    scope.launch {
-                                        wsClient.trySend(ServerCommand.PREVIOUS)
-                                    }
-                                }
-                                onNextClick = {
-                                    scope.launch {
-                                        wsClient.trySend(ServerCommand.NEXT)
-                                    }
-                                }
-                            }
-                        }
-                        GameState.GUEST_ROOM -> {
-                            guestQuestion {
-                                topic = state.topic
-                                question = state.question
-                                question2 = state.question2
-                            }
-                        }
-                        else -> println("Error state...")
+                    gameStateComp {
+                        gameState = state.gameState
+                        roomName = state.roomName
+                        roomNames = state.roomNames
+                        topic = state.topic
+                        question = state.question
+                        question2 = state.question2
+                        thirukkurals = state.thirukkurals
+                        createRoomErrorMsg = state.createRoomErrorMsg
+                        joinRoomErrorMsg = state.joinRoomErrorMsg
                     }
                     if (state.isAdminRoom
                         && state.roomName != null

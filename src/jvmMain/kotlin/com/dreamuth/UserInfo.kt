@@ -160,11 +160,14 @@ fun nextIndex(currentIndex: Int, maxIndex: Int): Int {
     return newIndex
 }
 
-fun fetchSource(): List<Thirukkural> {
+fun fetchSource(group: Group): List<Thirukkural> {
     val sourceData = Thirukkural::class.java.classLoader.getResource("kurals.txt")!!.readText()
     val thirukkurals = readSource(sourceData)
     println("version: 2020-12-19.1")
-    return thirukkurals
+    return when (group) {
+        Group.TWO -> thirukkurals.take(100)
+        Group.THREE -> thirukkurals.takeLast(150)
+    }
 }
 
 fun readSource(sourceTxt: String): MutableList<Thirukkural> {

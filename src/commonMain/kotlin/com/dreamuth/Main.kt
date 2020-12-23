@@ -21,7 +21,7 @@ import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Room(val name: String)
+data class Room(val name: String, val group: Group = Group.TWO)
 
 @Serializable
 data class AdminRoomResponse(var roomName: String, val adminPasscode: String, val guestPasscode: String)
@@ -95,6 +95,9 @@ data class StudentScore(var score: Map<Topic, Int> = Topic.values().map { it to 
 @Serializable
 data class RoomNamesData(val roomNames: List<String>)
 
+@Serializable
+enum class Group { TWO, THREE }
+
 enum class ServerCommand {
     CREATE_ROOM,
     ADMIN_JOIN_ROOM,
@@ -127,6 +130,7 @@ enum class ClientCommand {
 
 suspend fun WebSocketSession.trySend(message: String) {
     try {
+        println("sending ${message}...")
         send(message)
     } catch (t: Throwable) {
         try {

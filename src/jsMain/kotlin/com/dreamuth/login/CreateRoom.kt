@@ -16,11 +16,20 @@
 
 package com.dreamuth.login
 
+import com.dreamuth.Group
+import com.dreamuth.Room
+import com.dreamuth.ServerCommand
+import com.dreamuth.components.linkItem
+import com.dreamuth.scope
+import com.dreamuth.wsClient
+import kotlinx.coroutines.launch
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.w3c.dom.HTMLInputElement
 import react.RBuilder
 import react.RProps
@@ -34,14 +43,15 @@ import styled.styledForm
 import styled.styledInput
 import styled.styledLabel
 import styled.styledSmall
+import styled.styledUl
 
 external interface CreateRoomProps: RProps {
     var errorMsg: String?
-    var onCreateBtnClick: (String) -> Unit
 }
 
 private var createRoom = functionalComponent<CreateRoomProps> { props ->
     var roomName by useState("")
+    var group by useState(Group.TWO)
 
     styledForm {
         css {
@@ -52,7 +62,10 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
         attrs {
             onSubmitFunction = {
                 it.preventDefault()
-                props.onCreateBtnClick(roomName.trim())
+                scope.launch {
+                    val data = Json.encodeToString(Room(roomName.trim(), group))
+                    wsClient.trySend(ServerCommand.CREATE_ROOM.name + data)
+                }
             }
         }
         props.errorMsg?.let { errorMsg ->
@@ -96,6 +109,33 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                     classes = mutableListOf("form-text text-muted")
                 }
                 +"Password is hardcoded for demo purpose, before game it will be removed"
+            }
+        }
+        styledDiv {
+            css {
+                classes = mutableListOf("form-group")
+            }
+            styledUl {
+                css {
+                    classes = mutableListOf("nav bg-light nav-pills rounded-pill nav-fill mb-3")
+                    attrs {
+                        role = "tablist"
+                    }
+                }
+                linkItem {
+                    name = "Group II"
+                    isActive = group == Group.TWO
+                    onClickFunction = {
+                        group = Group.TWO
+                    }
+                }
+                linkItem {
+                    name = "Group III"
+                    isActive = group == Group.THREE
+                    onClickFunction = {
+                        group = Group.THREE
+                    }
+                }
             }
         }
         styledDiv {

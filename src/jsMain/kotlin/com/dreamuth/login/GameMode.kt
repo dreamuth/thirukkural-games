@@ -33,10 +33,6 @@ external interface GameModeProps: RProps {
     var roomNames: List<String>
     var createRoomErrorMsg: String?
     var joinRoomErrorMsg: String?
-    var onRoomNameChange: (String) -> Unit
-    var onCreateBtnClick: (String) -> Unit
-    var onAdminJoinBtnClick: (String, String) -> Unit
-    var onGuestJoinBtnClick: (String, String) -> Unit
 }
 
 private var gameMode = functionalComponent<GameModeProps> { props ->
@@ -52,7 +48,7 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
             }
             styledDiv {
                 css {
-                    classes = mutableListOf("col-lg-5 mx-auto")
+                    classes = mutableListOf("col-sm-10 col-md-8 col-lg-7 col-xl-6 mx-auto")
                 }
                 styledDiv {
                     css {
@@ -96,16 +92,12 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
                             GameState.CREATE -> {
                                 createRoom {
                                     errorMsg = props.createRoomErrorMsg
-                                    onCreateBtnClick = props.onCreateBtnClick
                                 }
                             }
                             GameState.JOIN -> {
                                 joinRoom {
                                     roomNames = props.roomNames
                                     errorMsg = props.joinRoomErrorMsg
-                                    onRoomNameChange = props.onRoomNameChange
-                                    onAdminJoinBtnClick = props.onAdminJoinBtnClick
-                                    onGuestJoinBtnClick = props.onGuestJoinBtnClick
                                 }
                             }
                             else -> {

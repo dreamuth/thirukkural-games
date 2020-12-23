@@ -16,12 +16,20 @@
 
 package com.dreamuth.login
 
+import com.dreamuth.AdminJoinRoom
+import com.dreamuth.GuestJoinRoom
+import com.dreamuth.ServerCommand
+import com.dreamuth.scope
+import com.dreamuth.wsClient
+import kotlinx.coroutines.launch
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
@@ -42,9 +50,6 @@ import styled.styledSelect
 external interface JoinRoomProps: RProps {
     var roomNames: List<String>
     var errorMsg: String?
-    var onRoomNameChange: (String) -> Unit
-    var onAdminJoinBtnClick: (String, String) -> Unit
-    var onGuestJoinBtnClick: (String, String) -> Unit
 }
 
 private var joinRoom = functionalComponent<JoinRoomProps> { props ->
@@ -62,9 +67,15 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                 it.preventDefault()
                 val selected = roomName ?: props.roomNames.first()
                 if (passcode.length == 8) {
-                    props.onAdminJoinBtnClick(selected, passcode)
+                    scope.launch {
+                        val data = Json.encodeToString(AdminJoinRoom(selected, passcode))
+                        wsClient.trySend(ServerCommand.ADMIN_JOIN_ROOM.name + data)
+                    }
                 } else {
-                    props.onGuestJoinBtnClick(selected, passcode)
+                    scope.launch {
+                        val data = Json.encodeToString(GuestJoinRoom(selected, passcode))
+                        wsClient.trySend(ServerCommand.GUEST_JOIN_ROOM.name + data)
+                    }
                 }
             }
         }

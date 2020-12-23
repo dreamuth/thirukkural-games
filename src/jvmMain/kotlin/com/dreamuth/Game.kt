@@ -49,7 +49,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     val userInfo = createAdminRoom(userSession, room, gameState)
                     val activeUserInfo = gameState.addUserInfo(userInfo)
                     if (userInfo == activeUserInfo) {
-                        val questionState = createQuestionState()
+                        val questionState = createQuestionState(room.group)
                         val actualQuestionState = gameState.addQuestionState(activeUserInfo.roomName, questionState)
                         if (questionState == actualQuestionState) {
                             val response = AdminRoomResponse(activeUserInfo.roomName, activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
@@ -233,8 +233,8 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         guestPasscode = gameState.createGuestPasscode()
     )
 
-    private fun createQuestionState(): QuestionState {
-        val thirukkurals = fetchSource()
+    private fun createQuestionState(group: Group): QuestionState {
+        val thirukkurals = fetchSource(group)
         return QuestionState(
             TopicState(),
             thirukkurals,

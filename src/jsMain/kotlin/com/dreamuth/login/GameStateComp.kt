@@ -16,27 +16,18 @@
 
 package com.dreamuth.login
 
-import com.dreamuth.AdminJoinRoom
 import com.dreamuth.AdminQuestion
 import com.dreamuth.GameState
-import com.dreamuth.GuestJoinRoom
 import com.dreamuth.GuestQuestion
-import com.dreamuth.Room
-import com.dreamuth.ServerCommand
 import com.dreamuth.StudentScore
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
 import com.dreamuth.TopicState
 import com.dreamuth.adminRoom.adminRoom
-import com.dreamuth.guestRoom.guestQuestionComp
 import com.dreamuth.adminRoom.roomInfo
 import com.dreamuth.adminRoom.scoreInfo
-import com.dreamuth.scope
+import com.dreamuth.guestRoom.guestQuestionComp
 import com.dreamuth.student.studentInfo
-import com.dreamuth.wsClient
-import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import react.RBuilder
 import react.RProps
 import react.child
@@ -66,36 +57,6 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                 roomNames = props.roomNames
                 createRoomErrorMsg = props.createRoomErrorMsg
                 joinRoomErrorMsg = props.joinRoomErrorMsg
-                onCreateBtnClick = { name ->
-                    println("sending ${ServerCommand.CREATE_ROOM}...")
-                    scope.launch {
-                        wsClient.trySend(
-                            ServerCommand.CREATE_ROOM.name + Json.encodeToString(
-                                Room(name)
-                            )
-                        )
-                    }
-                }
-                onAdminJoinBtnClick = { name, passcode ->
-                    println("sending ${ServerCommand.ADMIN_JOIN_ROOM}...")
-                    scope.launch {
-                        wsClient.trySend(
-                            ServerCommand.ADMIN_JOIN_ROOM.name + Json.encodeToString(
-                                AdminJoinRoom(name, passcode)
-                            )
-                        )
-                    }
-                }
-                onGuestJoinBtnClick = { name, passcode ->
-                    println("sending ${ServerCommand.GUEST_JOIN_ROOM}...")
-                    scope.launch {
-                        wsClient.trySend(
-                            ServerCommand.GUEST_JOIN_ROOM.name + Json.encodeToString(
-                                GuestJoinRoom(name, passcode)
-                            )
-                        )
-                    }
-                }
             }
         }
         GameState.CATEGORY_SELECTION -> {

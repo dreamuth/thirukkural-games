@@ -113,7 +113,7 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
             } else {
                 styledDiv {
                     css {
-                        classes = mutableListOf("m-1")
+                        classes = mutableListOf("m-2")
                     }
                     styledImg {
                         attrs.src = "img/thiruvalluvar.jpg"

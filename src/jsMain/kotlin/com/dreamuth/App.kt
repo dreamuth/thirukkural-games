@@ -142,6 +142,9 @@ class App : RComponent<RProps, AppState> () {
                         val receivedTopicState = Json.decodeFromString<TopicState>(data)
                         setState {
                             topicState = receivedTopicState
+                            if (guestQuestion.topic != topicState.selected) {
+                                guestQuestion = GuestQuestion(topic = receivedTopicState.selected)
+                            }
                         }
                     }
                     message.startsWith(ClientCommand.TIME_UPDATE.name) -> {

@@ -23,7 +23,12 @@ import com.dreamuth.scope
 import com.dreamuth.wsClient
 import kotlinx.coroutines.launch
 import kotlinx.css.LinearDimension
+import kotlinx.css.borderBottomLeftRadius
+import kotlinx.css.borderBottomRightRadius
+import kotlinx.css.borderTopLeftRadius
+import kotlinx.css.borderTopRightRadius
 import kotlinx.css.px
+import kotlinx.css.rem
 import kotlinx.css.width
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
@@ -32,6 +37,7 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
+import styled.StyleSheet
 import styled.css
 import styled.styledButton
 import styled.styledDiv
@@ -42,13 +48,24 @@ external interface NavigationProps: RProps {
     var adminQuestion: AdminQuestion
 }
 
+object ComponentStyles: StyleSheet("ComponentStyles", isStatic = true) {
+    val rigthRounded by css {
+        borderTopRightRadius = 50.rem
+        borderBottomRightRadius = 50.rem
+    }
+    val leftRounded by css {
+        borderTopLeftRadius = 50.rem
+        borderBottomLeftRadius = 50.rem
+    }
+}
+
 class Navigation : RComponent<NavigationProps, RState>() {
     override fun RBuilder.render() {
         styledButton {
             val activeStyle = if (props.timerState.isLive) "active" else ""
             css {
                 val style = if (props.timerState.isLive && props.timerState.time == 0L) "danger" else "primary"
-                classes = mutableListOf("btn btn-$style mr-2 $activeStyle")
+                classes = mutableListOf("btn btn-$style mr-2 $activeStyle rounded-pill")
                 width = props.buttonSize
                 attrs {
                     disabled = props.timerState.time <= 0
@@ -67,7 +84,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
         }
         styledButton {
             css {
-                classes = mutableListOf("btn btn-success mr-2")
+                classes = mutableListOf("btn btn-success mr-2 rounded-pill")
                 width = props.buttonSize
                 attrs {
                     disabled = props.timerState.time <= 0 || !props.timerState.isLive
@@ -92,10 +109,11 @@ class Navigation : RComponent<NavigationProps, RState>() {
             styledButton {
                 css {
                     val selectedStyle = if (props.adminQuestion.answered) "" else "active"
-                    classes = mutableListOf("btn btn-outline-success $selectedStyle")
+                    classes = mutableListOf("btn btn-outline-danger $selectedStyle")
                     width = 80.px
+                    +ComponentStyles.leftRounded
                     attrs {
-                        disabled = !props.timerState.isLive && (props.timerState.time == 31L)
+                        disabled = !props.timerState.isLive && (props.timerState.time == TimerState().time)
                     }
                 }
                 attrs {
@@ -116,10 +134,11 @@ class Navigation : RComponent<NavigationProps, RState>() {
             styledButton {
                 css {
                     val selectedStyle = if (props.adminQuestion.answered) "active" else ""
-                    classes = mutableListOf("btn btn-outline-success mr-2 $selectedStyle")
+                    classes = mutableListOf("btn btn-outline-success mr-2  $selectedStyle")
+                    +ComponentStyles.rigthRounded
                     width = 80.px
                     attrs {
-                        disabled = !props.timerState.isLive && (props.timerState.time == 31L)
+                        disabled = !props.timerState.isLive && (props.timerState.time == TimerState().time)
                     }
                 }
                 attrs {
@@ -140,7 +159,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
         }
         styledButton {
             css {
-                classes = mutableListOf("btn btn-success")
+                classes = mutableListOf("btn btn-success rounded-pill")
                 width = props.buttonSize
                 attrs {
                     disabled = props.timerState.time <= 0 || !props.timerState.isLive

@@ -45,7 +45,7 @@ class Dropdown : RComponent<DropdownProps, RState>() {
         styledButton {
             css {
                 val disabledStyle = if (props.names.flatten().isEmpty()) "disabled" else ""
-                classes = mutableListOf("btn btn-success dropdown-toggle $disabledStyle")
+                classes = mutableListOf("btn btn-success rounded-pill dropdown-toggle $disabledStyle")
                 props.width?.let { width = it }
             }
             attrs {

@@ -130,7 +130,7 @@ enum class ClientCommand {
 
 suspend fun WebSocketSession.trySend(message: String) {
     try {
-        println("sending ${message}...")
+//        println("sending ${message}...")
         send(message)
     } catch (t: Throwable) {
         try {

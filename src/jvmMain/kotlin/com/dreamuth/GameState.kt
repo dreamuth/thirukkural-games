@@ -66,7 +66,7 @@ class GameState(private val logger: Logger) {
                 val questionState = rooms.remove(userInfo.roomName)
                 questionState?.let {
                     questionState.timerState = TimerState()
-                    println("Removing room ${userInfo.roomName}")
+                    logger.info(userInfo, "room removed")
                     sendActiveRoomsToAllUsers()
                 }
             }
@@ -158,4 +158,3 @@ class GameState(private val logger: Logger) {
             .map { it.session.session }
     }
 }
-

@@ -53,8 +53,8 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                         val actualQuestionState = gameState.addQuestionState(activeUserInfo.roomName, questionState)
                         if (questionState == actualQuestionState) {
                             val response = AdminRoomResponse(activeUserInfo.roomName, activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
-                            logger.info(userSession, "Created the room [${activeUserInfo.roomName}]")
                             userSession.send(ClientCommand.ADMIN_CREATED_ROOM.name + Json.encodeToString(response))
+                            logger.info(activeUserInfo, "Created room $response")
                         } else {
                             logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room ${room.name}")
                             userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
@@ -84,6 +84,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     gameState.addUserInfo(userInfo)
                     val response = AdminRoomResponse(userInfo.roomName, userInfo.adminPasscode!!, userInfo.guestPasscode)
                     userSession.send(ClientCommand.ADMIN_JOINED_ROOM.name + Json.encodeToString(response))
+                    logger.info(userInfo, "Joined the room")
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
                         sendTimeToAll(questionState, userInfo)
                         sendTopicsToAll(questionState, userInfo)
@@ -111,6 +112,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     )
                     gameState.addUserInfo(userInfo)
                     userSession.send(ClientCommand.GUEST_JOINED_ROOM.name)
+                    logger.info(userInfo, "Joined the room")
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
                         sendTimeToAll(questionState, userInfo)
                         sendTopicsToAll(questionState, userInfo)
@@ -127,9 +129,10 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     questionState?.let {
                         questionState.timerState.isLive = true
                         val selectedTopic = questionState.topicState.selected
+                        logger.info(userInfo, "Started the game")
                         sendQuestionToAll(questionState, userInfo)
                         fixedRateTimer(name = "LiveTimer", daemon = true, period = 1000) {
-                            println("OnTimer: ${questionState.timerState.isLive} ${questionState.timerState.time}")
+//                            println("OnTimer: ${questionState.timerState.isLive} ${questionState.timerState.time}")
                             questionState.timerState.time--
                             if (questionState.timerState.isLive && questionState.timerState.time >= 0) {
                                 GlobalScope.launch {
@@ -155,6 +158,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
+                        logger.info(userInfo, "Asked for next question on category ${questionState.topicState.selected}")
                         when (questionState.topicState.selected) {
                             Topic.Athikaram -> questionState.athikaramState.goNext()
                             Topic.Kural, Topic.KuralPorul -> questionState.thirukkuralState.goNext()
@@ -170,6 +174,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
+                        logger.info(userInfo, "Asked for previous question on category ${questionState.topicState.selected}")
                         when (questionState.topicState.selected) {
                             Topic.Athikaram -> questionState.athikaramState.goPrevious()
                             Topic.Kural, Topic.KuralPorul -> questionState.thirukkuralState.goPrevious()
@@ -186,6 +191,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
+                        logger.info(userInfo, "Marked right answer for question ${questionState.topicState.selected}: $question")
                         questionState.scoreState.score[questionState.topicState.selected]?.add(question)
                         sendQuestionToAdmins(questionState, userInfo)
                         sendScoreToAdmins(questionState, userInfo)
@@ -198,6 +204,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
+                        logger.info(userInfo, "Marked wrong answer for question ${questionState.topicState.selected}: $question")
                         questionState.scoreState.score[questionState.topicState.selected]?.remove(question)
                         sendQuestionToAdmins(questionState, userInfo)
                         sendScoreToAdmins(questionState, userInfo)
@@ -210,6 +217,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
+                        logger.info(userInfo, "Changed the category from ${questionState.topicState.selected} to $newTopic")
                         questionState.timerState = TimerState()
                         questionState.topicState.selected = newTopic
                         sendTopicsToAll(questionState, userInfo)
@@ -219,7 +227,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
             }
             command.startsWith(ServerCommand.SIGN_OUT.name) -> {
                 gameState.userSignOut(userSession)
-                logger.info(userSession, "Sending sign out")
+                logger.info(userSession, "Signing out")
                 userSession.send(ClientCommand.SIGN_OUT)
             }
         }
@@ -250,7 +258,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
     private suspend fun sendAdminQuestionToMe(questionState: QuestionState, userInfo: UserInfo) {
         val adminQuestion = createAdminQuestion(questionState)
         val adminMessage = ClientCommand.ADMIN_QUESTION.name + Json.encodeToString(adminQuestion)
-        logger.info(userInfo.session, "Sending admin room data")
+        logger.info(userInfo, "Sending question to me.")
         userInfo.session.session.trySend(adminMessage)
     }
 
@@ -259,7 +267,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         val guestQuestion = GuestQuestion(
             adminQuestion.topic, adminQuestion.question, question2 = adminQuestion.question2)
         val guestMessage = ClientCommand.GUEST_QUESTION.name + Json.encodeToString(guestQuestion)
-        logger.info(userInfo.session, "Sending guest room data")
+        logger.info(userInfo, "Sending question to me.")
         userInfo.session.session.trySend(guestMessage)
     }
 
@@ -267,14 +275,14 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         val adminQuestion = createAdminQuestion(questionState)
         val guestQuestion = GuestQuestion(
             adminQuestion.topic, adminQuestion.question, question2 = adminQuestion.question2)
-        logger.info(userInfo.session, "Sending room data to room [${userInfo.roomName}]")
+        logger.info(userInfo, "Sending question to all")
         sendAdminQuestionToAllAdmins(adminQuestion, userInfo)
         sendGuestQuestionToAllGuests(guestQuestion, userInfo)
     }
 
     private suspend fun sendQuestionToAdmins(questionState: QuestionState, userInfo: UserInfo) {
         val adminQuestion = createAdminQuestion(questionState)
-        logger.info(userInfo.session, "Sending question to admins in room [${userInfo.roomName}]")
+        logger.info(userInfo, "Sending question to admins")
         sendAdminQuestionToAllAdmins(adminQuestion, userInfo)
     }
 
@@ -284,10 +292,8 @@ class Game(private val gameState: GameState, private val logger: Logger) {
     }
 
     private suspend fun sendTopicsToAll(questionState: QuestionState, userInfo: UserInfo) {
-        logger.info(userInfo.session, "Sending available topics to room [${userInfo.roomName}]")
-        println("Before Json: ${questionState.topicState}")
+        logger.info(userInfo, "Sending available topics to all")
         val message = ClientCommand.TOPIC_STATE.name + Json.encodeToString(questionState.topicState)
-        println("Sending msg: $message")
         gameState.getSessionsForRoom(userInfo.roomName).forEach { it.trySend(message) }
     }
 
@@ -302,7 +308,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
     }
 
     private suspend fun sendScoreToAdmins(questionState: QuestionState, userInfo: UserInfo) {
-        logger.info(userInfo.session, "Sending score to admins in room [${userInfo.roomName}]")
+        logger.info(userInfo, "Sending score to admins")
         val studentScore = StudentScore(questionState.scoreState.score.map { it.key to it.value.size }.toMap())
         val scoreMessage = ClientCommand.SCORE_UPDATE.name + Json.encodeToString(studentScore)
         gameState.getAdminSessionsForRoom(userInfo.roomName).forEach { it.trySend(scoreMessage) }
@@ -362,10 +368,14 @@ class Game(private val gameState: GameState, private val logger: Logger) {
     }
 }
 
-fun Logger.info(userSession: UserSession, message: String) {
-    info("[${userSession.name}] : $message.")
-}
-
 fun Logger.warn(userSession: UserSession, command: ServerCommand, message: String) {
     warn("[${userSession.name}] [${command}] : $message.")
+}
+
+fun Logger.info(userInfo: UserInfo, message: String) {
+    info("[${userInfo.roomName}] [${userInfo.userType.name}] [${userInfo.session.name}] : $message.")
+}
+
+fun Logger.info(userSession: UserSession, message: String) {
+    info("[ ] [ ] [${userSession.name}] : $message.")
 }

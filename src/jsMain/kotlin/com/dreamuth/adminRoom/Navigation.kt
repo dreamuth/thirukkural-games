@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.adminRoom
 
 import com.dreamuth.ServerCommand
 import com.dreamuth.TimerState
@@ -22,8 +22,6 @@ import com.dreamuth.scope
 import com.dreamuth.wsClient
 import kotlinx.coroutines.launch
 import kotlinx.css.LinearDimension
-import kotlinx.css.height
-import kotlinx.css.px
 import kotlinx.css.width
 import kotlinx.html.js.onClickFunction
 import react.RBuilder
@@ -33,9 +31,6 @@ import react.RState
 import react.ReactElement
 import styled.css
 import styled.styledButton
-import styled.styledDiv
-import styled.styledImg
-import styled.styledSpan
 
 external interface NavigationProps: RProps {
     var buttonSize: LinearDimension

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.adminRoom
 
+import com.dreamuth.KuralOnly
 import kotlinx.css.LinearDimension
 import kotlinx.css.fontSize
 import react.RBuilder
@@ -26,12 +27,12 @@ import react.ReactElement
 import styled.css
 import styled.styledDiv
 
-external interface QuestionProps: RProps {
-    var question: String
+external interface QuestionMultilineProps: RProps {
+    var question: KuralOnly
     var questionSize: LinearDimension
 }
 
-class Question : RComponent<QuestionProps, RState>() {
+class QuestionMultiline : RComponent<QuestionMultilineProps, RState>() {
     override fun RBuilder.render() {
         styledDiv {
             css {
@@ -42,14 +43,19 @@ class Question : RComponent<QuestionProps, RState>() {
                     classes = mutableListOf("card-header")
                     fontSize = props.questionSize
                 }
-                +props.question
+                styledDiv {
+                    +props.question.firstLine
+                }
+                styledDiv {
+                    +props.question.secondLine
+                }
             }
         }
     }
 }
 
-fun RBuilder.question(handler: QuestionProps.() -> Unit): ReactElement {
-    return child(Question::class) {
+fun RBuilder.questionMultiline(handler: QuestionMultilineProps.() -> Unit): ReactElement {
+    return child(QuestionMultiline::class) {
         this.attrs(handler)
     }
 }

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.guestRoom
 
 import com.dreamuth.GuestQuestion
+import com.dreamuth.TimerState
 import kotlinx.css.fontSize
 import kotlinx.css.rem
 import react.RBuilder
@@ -30,6 +31,7 @@ import styled.styledP
 
 external interface GuestQuestionProps: RProps {
     var guestQuestion: GuestQuestion
+    var timerState: TimerState
 }
 
 class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
@@ -40,14 +42,41 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
             }
             styledDiv {
                 css {
-                    classes = mutableListOf("card bg-success text-white m-2 text-center")
+                    classes = mutableListOf("row")
                 }
                 styledDiv {
                     css {
-                        classes = mutableListOf("card-header")
-                        fontSize = 1.5.rem
+                        classes = mutableListOf("col-9 pr-0")
                     }
-                    +props.guestQuestion.topic.tamilDisplay
+                    styledDiv {
+                        css {
+                            classes = mutableListOf("card bg-success text-white m-2 text-center")
+                        }
+                        styledDiv {
+                            css {
+                                classes = mutableListOf("card-header")
+                                fontSize = 1.5.rem
+                            }
+                            +props.guestQuestion.topic.tamilDisplay
+                        }
+                    }
+                }
+                styledDiv {
+                    css {
+                        classes = mutableListOf("col-3 pl-0")
+                    }
+                    styledDiv {
+                        css {
+                            classes = mutableListOf("card bg-success text-white m-2 text-center")
+                        }
+                        styledDiv {
+                            css {
+                                classes = mutableListOf("card-header")
+                                fontSize = 1.5.rem
+                            }
+                            if (props.timerState.isLive) +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60} " else +"Time"
+                        }
+                    }
                 }
             }
             styledDiv {

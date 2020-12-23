@@ -23,13 +23,12 @@ import com.dreamuth.GuestJoinRoom
 import com.dreamuth.GuestQuestion
 import com.dreamuth.Room
 import com.dreamuth.ServerCommand
-import com.dreamuth.Thirukkural
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
 import com.dreamuth.TopicState
-import com.dreamuth.room.adminRoom
-import com.dreamuth.room.guestQuestionComp
-import com.dreamuth.room.roomInfo
+import com.dreamuth.adminRoom.adminRoom
+import com.dreamuth.guestRoom.guestQuestionComp
+import com.dreamuth.adminRoom.roomInfo
 import com.dreamuth.scope
 import com.dreamuth.student.studentInfo
 import com.dreamuth.wsClient
@@ -140,6 +139,7 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
         GameState.GUEST_ROOM -> {
             guestQuestionComp {
                 guestQuestion = props.guestQuestion
+                timerState = props.timerState
             }
         }
         else -> println("Error state...")

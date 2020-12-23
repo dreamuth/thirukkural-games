@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.adminRoom
 
 import com.dreamuth.AdminQuestion
 import com.dreamuth.KuralOnly
@@ -38,7 +38,6 @@ external interface AdminRoomProps: RProps {
     var timerState: TimerState
     var adminQuestion: AdminQuestion
 }
-
 
 private var adminRoom = functionalComponent<AdminRoomProps> { props ->
     styledDiv {

@@ -86,6 +86,8 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     val response = AdminRoomResponse(userInfo.adminPasscode!!, userInfo.guestPasscode)
                     userSession.send(ClientCommand.ADMIN_JOINED_ROOM.name + Json.encodeToString(response))
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
+                        sendTimeToAll(questionState, userInfo)
+                        sendTopicsToAll(questionState, userInfo)
                         if (questionState.timerState.isLive) {
                             sendAdminQuestionToMe(questionState, userInfo)
                         }
@@ -111,6 +113,8 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     gameState.addUserInfo(userInfo)
                     userSession.send(ClientCommand.GUEST_JOINED_ROOM.name)
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
+                        sendTimeToAll(questionState, userInfo)
+                        sendTopicsToAll(questionState, userInfo)
                         if (questionState.timerState.isLive) {
                             sendGuestQuestionToMe(questionState, userInfo)
                         }
@@ -134,6 +138,9 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                                 }
                             } else {
                                 this.cancel()
+                                if (questionState.timerState.time < 0) {
+                                    questionState.timerState.time = 0
+                                }
                                 questionState.topicState.removeTopic(selectedTopic)
                                 GlobalScope.launch {
                                     sendTopicsToAll(questionState, userInfo)

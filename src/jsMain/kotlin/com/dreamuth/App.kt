@@ -145,6 +145,7 @@ class App : RComponent<RProps, AppState> () {
                         val receivedTopicState = Json.decodeFromString<TopicState>(data)
                         setState {
                             topicState = receivedTopicState
+                            guestQuestion = GuestQuestion(topic = receivedTopicState.selected)
                         }
                     }
                     message.startsWith(ClientCommand.SIGN_OUT.name) -> {

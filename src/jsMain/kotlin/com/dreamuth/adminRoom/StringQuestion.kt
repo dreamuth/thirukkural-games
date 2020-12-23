@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.adminRoom
 
-import com.dreamuth.KuralOnly
 import com.dreamuth.Thirukkural
 import kotlinx.css.LinearDimension
 import react.RBuilder
@@ -25,15 +24,15 @@ import react.RProps
 import react.RState
 import react.ReactElement
 
-external interface KuralQuestionProps: RProps {
-    var question: KuralOnly
+external interface StringQuestionProps: RProps {
+    var question: String
     var questionSize: LinearDimension
     var thirukkurals: List<Thirukkural>
 }
 
-class KuralQuestion : RComponent<KuralQuestionProps, RState>() {
+class StringQuestion : RComponent<StringQuestionProps, RState>() {
     override fun RBuilder.render() {
-        questionMultiline {
+        question {
             question = props.question
             questionSize = props.questionSize
         }
@@ -45,8 +44,8 @@ class KuralQuestion : RComponent<KuralQuestionProps, RState>() {
     }
 }
 
-fun RBuilder.kuralQuestion(handler: KuralQuestionProps.() -> Unit): ReactElement {
-    return child(KuralQuestion::class) {
+fun RBuilder.stringQuestion(handler: StringQuestionProps.() -> Unit): ReactElement {
+    return child(StringQuestion::class) {
         this.attrs(handler)
     }
 }

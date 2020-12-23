@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.adminRoom
 
 import com.dreamuth.Thirukkural
 import react.RBuilder

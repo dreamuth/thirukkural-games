@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.adminRoom
 
-import kotlinx.css.Position
-import kotlinx.css.bottom
-import kotlinx.css.minWidth
-import kotlinx.css.position
-import kotlinx.css.px
 import kotlinx.html.DIV
 import react.RBuilder
 import react.RComponent

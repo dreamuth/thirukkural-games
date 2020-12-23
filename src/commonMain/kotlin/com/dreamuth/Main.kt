@@ -72,11 +72,11 @@ data class AdminQuestion(
 @Serializable
 data class GuestQuestion(
     val topic: Topic = Topic.Athikaram,
-    val question: String = "Loading...",
+    val question: String = "Waiting to start...",
     val question2: String? = null)
 
 @Serializable
-data class TimerState(var isLive: Boolean = false, var time: Long = 30)
+data class TimerState(var isLive: Boolean = false, var time: Long = 31)
 
 @Serializable
 data class TopicState(

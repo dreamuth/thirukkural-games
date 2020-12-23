@@ -14,48 +14,39 @@
  * limitations under the License.
  */
 
-package com.dreamuth.room
+package com.dreamuth.adminRoom
 
 import com.dreamuth.KuralOnly
+import com.dreamuth.Thirukkural
 import kotlinx.css.LinearDimension
-import kotlinx.css.fontSize
 import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
 import react.ReactElement
-import styled.css
-import styled.styledDiv
 
-external interface QuestionMultilineProps: RProps {
+external interface KuralQuestionProps: RProps {
     var question: KuralOnly
     var questionSize: LinearDimension
+    var thirukkurals: List<Thirukkural>
 }
 
-class QuestionMultiline : RComponent<QuestionMultilineProps, RState>() {
+class KuralQuestion : RComponent<KuralQuestionProps, RState>() {
     override fun RBuilder.render() {
-        styledDiv {
-            css {
-                classes = mutableListOf("card bg-warning m-2 text-center")
-            }
-            styledDiv {
-                css {
-                    classes = mutableListOf("card-header")
-                    fontSize = props.questionSize
-                }
-                styledDiv {
-                    +props.question.firstLine
-                }
-                styledDiv {
-                    +props.question.secondLine
-                }
+        questionMultiline {
+            question = props.question
+            questionSize = props.questionSize
+        }
+        props.thirukkurals.forEach { thirukkural ->
+            kuralDisplay {
+                selectedThirukkural = thirukkural
             }
         }
     }
 }
 
-fun RBuilder.questionMultiline(handler: QuestionMultilineProps.() -> Unit): ReactElement {
-    return child(QuestionMultiline::class) {
+fun RBuilder.kuralQuestion(handler: KuralQuestionProps.() -> Unit): ReactElement {
+    return child(KuralQuestion::class) {
         this.attrs(handler)
     }
 }

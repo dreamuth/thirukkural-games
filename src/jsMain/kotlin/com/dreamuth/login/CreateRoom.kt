@@ -71,6 +71,38 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                 classes = mutableListOf("form-group")
             }
             styledLabel {
+                +"Admin password"
+            }
+            styledInput {
+                css {
+                    classes = mutableListOf("form-control")
+                    attrs {
+                        type = InputType.text
+                        name = "adminPassword"
+                        value = "HTS-Kids-2021"
+                        readonly = true
+//                        required = true
+                    }
+                }
+//                attrs {
+//                    onChangeFunction = {
+//                        val target = it.target as HTMLInputElement
+//                        roomName = target.value
+//                    }
+//                }
+            }
+            styledSmall {
+                css {
+                    classes = mutableListOf("form-text text-muted")
+                }
+                +"Password is hardcoded for demo purpose, before game it will be removed"
+            }
+        }
+        styledDiv {
+            css {
+                classes = mutableListOf("form-group")
+            }
+            styledLabel {
                 +"Room name"
             }
             styledInput {

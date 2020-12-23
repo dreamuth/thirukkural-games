@@ -16,6 +16,7 @@
 
 package com.dreamuth.adminRoom
 
+import com.dreamuth.AdminQuestion
 import com.dreamuth.ServerCommand
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
@@ -37,6 +38,7 @@ import styled.styledDiv
 external interface TitleBarProps: RProps {
     var timerState: TimerState
     var topicState: TopicState
+    var adminQuestion: AdminQuestion
     var firstRowStyle: String
     var firstRowWidth: LinearDimension?
     var personButtonWidth: LinearDimension?
@@ -69,7 +71,7 @@ class TitleBar : RComponent<TitleBarProps, RState>() {
                         names = listOf(
                             props.topicState.availableTopics.map { it.tamilDisplay }
                         )
-                        selectedName = if (props.topicState.availableTopics.isNotEmpty()) props.topicState.selected.tamilDisplay else "Done"
+                        selectedName = if (props.topicState.availableTopics.isNotEmpty()) props.topicState.selected.tamilDisplay else "முற்றும்"
                         onDropdownClick = { _, name ->
                             val expectedTopic = Topic.getTopic(name)
                             if (props.topicState.selected != expectedTopic) {
@@ -89,6 +91,7 @@ class TitleBar : RComponent<TitleBarProps, RState>() {
                 navigation {
                     buttonSize = props.navigationWidth
                     timerState = props.timerState
+                    adminQuestion = props.adminQuestion
                 }
             }
         }

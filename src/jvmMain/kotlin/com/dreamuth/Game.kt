@@ -181,6 +181,30 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     }
                 }
             }
+            command.startsWith(ServerCommand.RIGHT_ANSWER.name) -> {
+                val question = command.removePrefix(ServerCommand.RIGHT_ANSWER.name)
+                val userInfo = gameState.getUserInfo(userSession)
+                userInfo?.let {
+                    val questionState = gameState.getQuestionState(userInfo.roomName)
+                    questionState?.let {
+                        questionState.scoreState.score[questionState.topicState.selected]?.add(question)
+                        sendQuestionToAdmins(questionState, userInfo)
+                        sendScoreToAdmins(questionState, userInfo)
+                    }
+                }
+            }
+            command.startsWith(ServerCommand.WRONG_ANSWER.name) -> {
+                val question = command.removePrefix(ServerCommand.WRONG_ANSWER.name)
+                val userInfo = gameState.getUserInfo(userSession)
+                userInfo?.let {
+                    val questionState = gameState.getQuestionState(userInfo.roomName)
+                    questionState?.let {
+                        questionState.scoreState.score[questionState.topicState.selected]?.remove(question)
+                        sendQuestionToAdmins(questionState, userInfo)
+                        sendScoreToAdmins(questionState, userInfo)
+                    }
+                }
+            }
             command.startsWith(ServerCommand.TOPIC_CHANGE.name) -> {
                 val newTopic = Topic.valueOf(command.removePrefix(ServerCommand.TOPIC_CHANGE.name))
                 val userInfo = gameState.getUserInfo(userSession)
@@ -216,6 +240,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
             TopicState(),
             thirukkurals,
             TimerState(),
+            ScoreState(),
             AthikaramState(thirukkurals),
             ThirukkuralState(thirukkurals),
             FirstWordState(thirukkurals),
@@ -248,6 +273,12 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         sendGuestQuestionToAllGuests(guestQuestion, userInfo)
     }
 
+    private suspend fun sendQuestionToAdmins(questionState: QuestionState, userInfo: UserInfo) {
+        val adminQuestion = createAdminQuestion(questionState)
+        logger.info(userInfo.session, "Sending question to admins in room [${userInfo.roomName}]")
+        sendAdminQuestionToAllAdmins(adminQuestion, userInfo)
+    }
+
     private suspend fun sendTimeToAll(questionState: QuestionState, userInfo: UserInfo) {
         val message = ClientCommand.TIME_UPDATE.name + Json.encodeToString(questionState.timerState)
         gameState.getSessionsForRoom(userInfo.roomName).forEach { it.trySend(message) }
@@ -271,43 +302,64 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         gameState.getGuestSessionsForRoom(userInfo.roomName).forEach { it.trySend(guestMessage) }
     }
 
+    private suspend fun sendScoreToAdmins(questionState: QuestionState, userInfo: UserInfo) {
+        logger.info(userInfo.session, "Sending score to admins in room [${userInfo.roomName}]")
+        val studentScore = StudentScore(questionState.scoreState.score.map { it.key to it.value.size }.toMap())
+        val scoreMessage = ClientCommand.SCORE_UPDATE.name + Json.encodeToString(studentScore)
+        gameState.getAdminSessionsForRoom(userInfo.roomName).forEach { it.trySend(scoreMessage) }
+    }
+
     private fun createAdminQuestion(roomState: QuestionState): AdminQuestion {
         return when (roomState.topicState.selected) {
             Topic.Athikaram -> {
                 val question = roomState.athikaramState.getCurrent()
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.athikaram == question }
-                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
+                val answered = roomState.scoreState.score[Topic.Athikaram]!!.contains(question)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals, answered)
             }
             Topic.KuralPorul -> {
                 val question = roomState.thirukkuralState.getCurrent().porul
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.porul == question }
-
-                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
+                val answered = roomState.scoreState.score[Topic.KuralPorul]!!.contains(question)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals, answered)
             }
             Topic.FirstWord -> {
                 val question = roomState.firstWordState.getCurrent()
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.words.first() == question }
-                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
+                val answered = roomState.scoreState.score[Topic.FirstWord]!!.contains(question)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals, answered)
             }
             Topic.LastWord -> {
                 val question = roomState.lastWordState.getCurrent()
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.words.last() == question }
-                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
+                val answered = roomState.scoreState.score[Topic.LastWord]!!.contains(question)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals, answered)
             }
             Topic.Kural -> {
                 val question = roomState.thirukkuralState.getCurrent().kural
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.kural == question }
-                createMessage(roomState.topicState.selected, question, thirukkurals)
+                val answered = roomState.scoreState.score[Topic.Kural]!!.contains(question.firstLine + question.secondLine)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals, answered)
             }
         }
     }
 
-    private fun createAdminQuestion(topic: Topic, question: String, thirukkurals: List<Thirukkural>): AdminQuestion {
-        return AdminQuestion(topic, question, thirukkurals)
+    private fun createAdminQuestion(
+        topic: Topic,
+        question: String,
+        thirukkurals: List<Thirukkural>,
+        answered: Boolean
+    ): AdminQuestion {
+        return AdminQuestion(topic, question, thirukkurals, answered)
     }
 
-    private fun createMessage(topic: Topic, question: KuralOnly, thirukkurals: List<Thirukkural>): AdminQuestion {
-       return AdminQuestion(topic, question.firstLine, thirukkurals, question.secondLine)
+    private fun createAdminQuestion(
+        topic: Topic,
+        question: KuralOnly,
+        thirukkurals: List<Thirukkural>,
+        answered: Boolean
+    ): AdminQuestion {
+        return AdminQuestion(topic, question.firstLine, thirukkurals, answered, question.secondLine)
     }
 }
 

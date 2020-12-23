@@ -48,10 +48,10 @@ data class KuralOnly(val firstLine: String, val secondLine: String)
 
 @Serializable
 enum class Topic(val tamilDisplay: String) {
-    FirstWord("முதல் வார்த்தை"),
     Athikaram("அதிகாரம்"),
-    Kural("குறள்"),
     KuralPorul("பொருள்"),
+    Kural("குறள்"),
+    FirstWord("முதல் வார்த்தை"),
     LastWord("கடைசி வார்த்தை");
 
     companion object {
@@ -66,6 +66,7 @@ data class AdminQuestion(
     val topic: Topic = Topic.Athikaram,
     val question: String = "Loading...",
     val thirukkurals: List<Thirukkural> = listOf(),
+    val answered: Boolean = false,
     val question2: String? = null
 )
 
@@ -89,6 +90,9 @@ data class TopicState(
 }
 
 @Serializable
+data class StudentScore(var score: Map<Topic, Int> = Topic.values().map { it to 0 }.toMap())
+
+@Serializable
 data class RoomNamesData(val roomNames: List<String>)
 
 enum class ServerCommand {
@@ -98,6 +102,8 @@ enum class ServerCommand {
     START_GAME,
     NEXT,
     PREVIOUS,
+    RIGHT_ANSWER,
+    WRONG_ANSWER,
     TOPIC_CHANGE,
     SIGN_OUT
 }
@@ -115,7 +121,8 @@ enum class ClientCommand {
     ADMIN_QUESTION,
     GUEST_QUESTION,
     TIME_UPDATE,
-    TOPIC_STATE;
+    TOPIC_STATE,
+    SCORE_UPDATE;
 }
 
 suspend fun WebSocketSession.trySend(message: String) {

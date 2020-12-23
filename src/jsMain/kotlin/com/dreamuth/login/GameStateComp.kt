@@ -23,12 +23,14 @@ import com.dreamuth.GuestJoinRoom
 import com.dreamuth.GuestQuestion
 import com.dreamuth.Room
 import com.dreamuth.ServerCommand
+import com.dreamuth.StudentScore
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
 import com.dreamuth.TopicState
 import com.dreamuth.adminRoom.adminRoom
 import com.dreamuth.guestRoom.guestQuestionComp
 import com.dreamuth.adminRoom.roomInfo
+import com.dreamuth.adminRoom.scoreInfo
 import com.dreamuth.scope
 import com.dreamuth.student.studentInfo
 import com.dreamuth.wsClient
@@ -50,6 +52,7 @@ external interface GameStateCompProps: RProps {
     var timerState: TimerState
     var adminQuestion: AdminQuestion
     var guestQuestion: GuestQuestion
+    var studentScore: StudentScore
     var adminPasscode: String?
     var guestPasscode: String?
     var createRoomErrorMsg: String?
@@ -132,6 +135,9 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                             adminPasscode = props.adminPasscode!!
                             guestPasscode = props.guestPasscode!!
                         }
+                    }
+                    scoreInfo {
+                        studentScore = props.studentScore
                     }
                 }
             }

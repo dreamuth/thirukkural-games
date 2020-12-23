@@ -52,6 +52,7 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
             titleBar {
                 timerState = props.timerState
                 topicState = props.topicState
+                adminQuestion = props.adminQuestion
                 firstRowStyle = "col pl-0 pr-0"
                 topicButtonWidth = 200.px
                 secondRowStyle = "col-md-auto pr-0"

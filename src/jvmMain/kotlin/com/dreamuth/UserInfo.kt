@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
 
 enum class UserType{
-    PRACTICE,
     ADMIN,
     GUEST
 }
@@ -40,6 +39,8 @@ data class UserSession(val session: DefaultWebSocketSession) {
     }
 }
 
+data class ScoreState(val score: Map<Topic, MutableSet<String>> = Topic.values().map { it to mutableSetOf<String>() }.toMap())
+
 data class UserInfo(
     val session: UserSession,
     val roomName: String,
@@ -51,6 +52,7 @@ data class QuestionState(
     var topicState: TopicState,
     var thirukkurals: List<Thirukkural>,
     var timerState: TimerState,
+    var scoreState: ScoreState,
     var athikaramState: AthikaramState,
     var thirukkuralState: ThirukkuralState,
     var firstWordState: FirstWordState,

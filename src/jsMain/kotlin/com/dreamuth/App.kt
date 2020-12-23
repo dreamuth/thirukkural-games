@@ -54,6 +54,7 @@ external interface AppState: RState {
     var topicState: TopicState
     var adminQuestion: AdminQuestion
     var guestQuestion: GuestQuestion
+    var studentScore: StudentScore
     var roomName: String?
     var roomNames: List<String>
     var isAdminRoom: Boolean
@@ -72,6 +73,7 @@ class App : RComponent<RProps, AppState> () {
                 timerState = TimerState()
                 adminQuestion = AdminQuestion()
                 guestQuestion = GuestQuestion()
+                studentScore= StudentScore()
                 roomNames = listOf()
                 isAdminRoom = false
                 isLoaded = true
@@ -133,6 +135,15 @@ class App : RComponent<RProps, AppState> () {
                             guestQuestion = receivedGuestQuestion
                         }
                     }
+                    message.startsWith(ClientCommand.TOPIC_STATE.name) -> {
+                        val data = message.removePrefix(ClientCommand.TOPIC_STATE.name)
+                        val receivedTopicState = Json.decodeFromString<TopicState>(data)
+                        setState {
+                            topicState = receivedTopicState
+//                            adminQuestion = AdminQuestion()
+                            guestQuestion = GuestQuestion(topic = receivedTopicState.selected)
+                        }
+                    }
                     message.startsWith(ClientCommand.TIME_UPDATE.name) -> {
                         val data = message.removePrefix(ClientCommand.TIME_UPDATE.name)
                         val receivedTimerState = Json.decodeFromString<TimerState>(data)
@@ -140,21 +151,22 @@ class App : RComponent<RProps, AppState> () {
                             timerState = receivedTimerState
                         }
                     }
-                    message.startsWith(ClientCommand.TOPIC_STATE.name) -> {
-                        val data = message.removePrefix(ClientCommand.TOPIC_STATE.name)
-                        val receivedTopicState = Json.decodeFromString<TopicState>(data)
+                    message.startsWith(ClientCommand.SCORE_UPDATE.name) -> {
+                        val data = message.removePrefix(ClientCommand.SCORE_UPDATE.name)
+                        val receivedStudentScore = Json.decodeFromString<StudentScore>(data)
                         setState {
-                            topicState = receivedTopicState
-                            guestQuestion = GuestQuestion(topic = receivedTopicState.selected)
+                            studentScore = receivedStudentScore
                         }
                     }
                     message.startsWith(ClientCommand.SIGN_OUT.name) -> {
                         setState {
                             gameState = GameState.NONE
-                            timerState = TimerState()
                             topicState = TopicState()
+                            timerState = TimerState()
                             adminQuestion = AdminQuestion()
                             guestQuestion = GuestQuestion()
+                            studentScore= StudentScore()
+                            roomNames = listOf()
                             isAdminRoom = false
                         }
                     }
@@ -216,6 +228,7 @@ class App : RComponent<RProps, AppState> () {
                         guestQuestion = state.guestQuestion
                         timerState = state.timerState
                         topicState = state.topicState
+                        studentScore = state.studentScore
                         adminPasscode = state.adminPasscode
                         guestPasscode = state.guestPasscode
                         createRoomErrorMsg = state.createRoomErrorMsg

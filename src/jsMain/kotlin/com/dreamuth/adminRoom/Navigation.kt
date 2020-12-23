@@ -16,14 +16,19 @@
 
 package com.dreamuth.adminRoom
 
+import com.dreamuth.AdminQuestion
 import com.dreamuth.ServerCommand
 import com.dreamuth.TimerState
 import com.dreamuth.scope
 import com.dreamuth.wsClient
 import kotlinx.coroutines.launch
 import kotlinx.css.LinearDimension
+import kotlinx.css.px
 import kotlinx.css.width
 import kotlinx.html.js.onClickFunction
+import kotlinx.html.role
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -31,10 +36,12 @@ import react.RState
 import react.ReactElement
 import styled.css
 import styled.styledButton
+import styled.styledDiv
 
 external interface NavigationProps: RProps {
     var buttonSize: LinearDimension
     var timerState: TimerState
+    var adminQuestion: AdminQuestion
 }
 
 class Navigation : RComponent<NavigationProps, RState>() {
@@ -48,7 +55,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
                     disabled = props.timerState.time <= 0
                 }
             }
-            if (props.timerState.isLive) +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60} " else +"Start"
+            if (props.timerState.isLive) +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60} " else +"தொடங்கு"
             attrs {
                 onClickFunction = {
                     if (!props.timerState.isLive) {
@@ -75,6 +82,62 @@ class Navigation : RComponent<NavigationProps, RState>() {
                 }
             }
             +"முன்பு"
+        }
+        styledDiv {
+            css {
+                classes = mutableListOf("btn-group")
+                attrs {
+                    role = "group"
+                }
+            }
+            styledButton {
+                css {
+                    val selectedStyle = if (props.adminQuestion.answered) "" else "active"
+                    classes = mutableListOf("btn btn-outline-success $selectedStyle")
+                    width = 80.px
+                    attrs {
+                        disabled = !props.timerState.isLive && (props.timerState.time == 31L)
+                    }
+                }
+                attrs {
+                    onClickFunction = {
+                        if (props.adminQuestion.thirukkurals.isNotEmpty()) {
+                            var question = props.adminQuestion.question
+                            props.adminQuestion.question2?.let {
+                                question += it
+                            }
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.WRONG_ANSWER.name + question)
+                            }
+                        }
+                    }
+                }
+                +"தவறு"
+            }
+            styledButton {
+                css {
+                    val selectedStyle = if (props.adminQuestion.answered) "active" else ""
+                    classes = mutableListOf("btn btn-outline-success mr-2 $selectedStyle")
+                    width = 80.px
+                    attrs {
+                        disabled = !props.timerState.isLive && (props.timerState.time == 31L)
+                    }
+                }
+                attrs {
+                    onClickFunction = {
+                        if (props.adminQuestion.thirukkurals.isNotEmpty()) {
+                            var question = props.adminQuestion.question
+                            props.adminQuestion.question2?.let {
+                                question += it
+                            }
+                            scope.launch {
+                                wsClient.trySend(ServerCommand.RIGHT_ANSWER.name + question)
+                            }
+                        }
+                    }
+                }
+                +"சரி"
+            }
         }
         styledButton {
             css {

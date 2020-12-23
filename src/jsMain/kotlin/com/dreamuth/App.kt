@@ -98,6 +98,7 @@ class App : RComponent<RProps, AppState> () {
                             createRoomErrorMsg = null
                             joinRoomErrorMsg = null
                             isAdminRoom = true
+                            roomName = adminRoomResponse.roomName
                             adminPasscode = adminRoomResponse.adminPasscode
                             guestPasscode = adminRoomResponse.guestPasscode
                             gameState = GameState.ADMIN_ROOM
@@ -110,9 +111,15 @@ class App : RComponent<RProps, AppState> () {
                             createRoomErrorMsg = null
                             joinRoomErrorMsg = null
                             isAdminRoom = true
+                            roomName = adminRoomResponse.roomName
                             adminPasscode = adminRoomResponse.adminPasscode
                             guestPasscode = adminRoomResponse.guestPasscode
                             gameState = GameState.ADMIN_ROOM
+                        }
+                    }
+                    message.startsWith(ClientCommand.GUEST_JOINED_ROOM.name) -> {
+                        setState {
+                            gameState = GameState.GUEST_ROOM
                         }
                     }
                     message.startsWith(ClientCommand.ADMIN_QUESTION.name) -> {
@@ -121,11 +128,6 @@ class App : RComponent<RProps, AppState> () {
                         setState {
                             adminQuestion = receivedAdminQuestion
                             // TODO: Do we need to reset the timer?
-                        }
-                    }
-                    message.startsWith(ClientCommand.GUEST_JOINED_ROOM.name) -> {
-                        setState {
-                            gameState = GameState.GUEST_ROOM
                         }
                     }
                     message.startsWith(ClientCommand.GUEST_QUESTION.name) -> {
@@ -140,8 +142,6 @@ class App : RComponent<RProps, AppState> () {
                         val receivedTopicState = Json.decodeFromString<TopicState>(data)
                         setState {
                             topicState = receivedTopicState
-//                            adminQuestion = AdminQuestion()
-                            guestQuestion = GuestQuestion(topic = receivedTopicState.selected)
                         }
                     }
                     message.startsWith(ClientCommand.TIME_UPDATE.name) -> {
@@ -166,7 +166,6 @@ class App : RComponent<RProps, AppState> () {
                             adminQuestion = AdminQuestion()
                             guestQuestion = GuestQuestion()
                             studentScore= StudentScore()
-                            roomNames = listOf()
                             isAdminRoom = false
                         }
                     }

@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
 data class Room(val name: String)
 
 @Serializable
-data class AdminRoomResponse(val adminPasscode: String, val guestPasscode: String)
+data class AdminRoomResponse(var roomName: String, val adminPasscode: String, val guestPasscode: String)
 
 @Serializable
 data class AdminJoinRoom(val roomName: String, val passcode: String)

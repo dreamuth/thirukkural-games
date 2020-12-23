@@ -27,8 +27,6 @@ import kotlinx.css.px
 import kotlinx.css.width
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -49,7 +47,8 @@ class Navigation : RComponent<NavigationProps, RState>() {
         styledButton {
             val activeStyle = if (props.timerState.isLive) "active" else ""
             css {
-                classes = mutableListOf("btn btn-primary mr-2 $activeStyle")
+                val style = if (props.timerState.isLive && props.timerState.time == 0L) "danger" else "primary"
+                classes = mutableListOf("btn btn-$style mr-2 $activeStyle")
                 width = props.buttonSize
                 attrs {
                     disabled = props.timerState.time <= 0

@@ -64,12 +64,8 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
         GameState.NONE -> {
             gameMode {
                 roomNames = props.roomNames
-                roomName = props.roomName
                 createRoomErrorMsg = props.createRoomErrorMsg
                 joinRoomErrorMsg = props.joinRoomErrorMsg
-                onRoomNameChange = {
-                    roomName = it
-                }
                 onCreateBtnClick = { name ->
                     println("sending ${ServerCommand.CREATE_ROOM}...")
                     scope.launch {

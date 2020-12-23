@@ -52,10 +52,9 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                         val questionState = createQuestionState()
                         val actualQuestionState = gameState.addQuestionState(activeUserInfo.roomName, questionState)
                         if (questionState == actualQuestionState) {
-                            val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
+                            val response = AdminRoomResponse(activeUserInfo.roomName, activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
                             logger.info(userSession, "Created the room [${activeUserInfo.roomName}]")
                             userSession.send(ClientCommand.ADMIN_CREATED_ROOM.name + Json.encodeToString(response))
-//                            sendAdminQuestionToMe(actualQuestionState, userInfo)
                         } else {
                             logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room ${room.name}")
                             userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
@@ -83,7 +82,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                         guestPasscode = gameState.getGuestPasscode(adminJoinRoom)
                     )
                     gameState.addUserInfo(userInfo)
-                    val response = AdminRoomResponse(userInfo.adminPasscode!!, userInfo.guestPasscode)
+                    val response = AdminRoomResponse(userInfo.roomName, userInfo.adminPasscode!!, userInfo.guestPasscode)
                     userSession.send(ClientCommand.ADMIN_JOINED_ROOM.name + Json.encodeToString(response))
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
                         sendTimeToAll(questionState, userInfo)

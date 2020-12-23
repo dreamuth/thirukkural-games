@@ -20,8 +20,6 @@ import kotlinx.html.ButtonType
 import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onFormChangeFunction
-import kotlinx.html.js.onSelectFunction
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
 import org.w3c.dom.HTMLInputElement
@@ -40,11 +38,9 @@ import styled.styledForm
 import styled.styledInput
 import styled.styledLabel
 import styled.styledSelect
-import styled.styledSmall
 
 external interface JoinRoomProps: RProps {
     var roomNames: List<String>
-    var roomName: String?
     var errorMsg: String?
     var onRoomNameChange: (String) -> Unit
     var onAdminJoinBtnClick: (String, String) -> Unit
@@ -53,6 +49,7 @@ external interface JoinRoomProps: RProps {
 
 private var joinRoom = functionalComponent<JoinRoomProps> { props ->
     var passcode by useState("")
+    var roomName: String? by useState(null)
 
     styledForm {
         css {
@@ -63,12 +60,11 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
         attrs {
             onSubmitFunction = {
                 it.preventDefault()
-                props.roomName?.let { roomName ->
-                    if (passcode.length == 8) {
-                        props.onAdminJoinBtnClick(roomName, passcode)
-                    } else {
-                        props.onGuestJoinBtnClick(roomName, passcode)
-                    }
+                val selected = roomName ?: props.roomNames.first()
+                if (passcode.length == 8) {
+                    props.onAdminJoinBtnClick(selected, passcode)
+                } else {
+                    props.onGuestJoinBtnClick(selected, passcode)
                 }
             }
         }
@@ -109,9 +105,6 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                         classes = mutableListOf("form-control custom-select")
                         attrs {
                             id = "selectRoom1"
-                            props.roomName?.let { roomName ->
-                                value = roomName
-                            }
                         }
                     }
                     props.roomNames.forEach { roomName ->
@@ -120,7 +113,7 @@ private var joinRoom = functionalComponent<JoinRoomProps> { props ->
                     attrs {
                         onChangeFunction = {
                             val target = it.target as HTMLSelectElement
-                            props.onRoomNameChange(target.value)
+                            roomName = target.value
                         }
                     }
                 }

@@ -19,7 +19,9 @@ package com.dreamuth.guestRoom
 import com.dreamuth.GuestQuestion
 import com.dreamuth.TimerState
 import kotlinx.css.fontSize
+import kotlinx.css.pct
 import kotlinx.css.rem
+import kotlinx.css.width
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -27,6 +29,7 @@ import react.RState
 import react.ReactElement
 import styled.css
 import styled.styledDiv
+import styled.styledImg
 import styled.styledP
 
 external interface GuestQuestionProps: RProps {
@@ -67,7 +70,8 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                     }
                     styledDiv {
                         css {
-                            classes = mutableListOf("card bg-success text-white m-2 text-center")
+                            val style = if (props.timerState.isLive && props.timerState.time == 0L) "danger" else "success"
+                            classes = mutableListOf("card bg-$style text-white m-2 text-center")
                         }
                         styledDiv {
                             css {
@@ -79,28 +83,43 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                     }
                 }
             }
-            styledDiv {
-                css {
-                    classes = mutableListOf("card bg-warning text-dark m-2 text-center")
-                }
+            if (props.timerState.isLive) {
                 styledDiv {
                     css {
-                        classes = mutableListOf("card-body")
+                        classes = mutableListOf("card bg-warning text-dark m-2 text-center")
                     }
-                    styledP {
+                    styledDiv {
                         css {
-                            classes = mutableListOf("card-text")
-                            fontSize = 2.rem
+                            classes = mutableListOf("card-body")
                         }
-                        +props.guestQuestion.question
-                    }
-                    props.guestQuestion.question2?.let { question2 ->
                         styledP {
                             css {
                                 classes = mutableListOf("card-text")
                                 fontSize = 2.rem
                             }
-                            +question2
+                            +props.guestQuestion.question
+                        }
+                        props.guestQuestion.question2?.let { question2 ->
+                            styledP {
+                                css {
+                                    classes = mutableListOf("card-text")
+                                    fontSize = 2.rem
+                                }
+                                +question2
+                            }
+                        }
+                    }
+                }
+            } else {
+                styledDiv {
+                    css {
+                        classes = mutableListOf("m-1")
+                    }
+                    styledImg {
+                        attrs.src = "img/thiruvalluvar.jpg"
+                        css {
+                            classes = mutableListOf("")
+                            width = 100.pct
                         }
                     }
                 }

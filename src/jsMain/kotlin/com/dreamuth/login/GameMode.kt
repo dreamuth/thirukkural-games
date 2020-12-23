@@ -31,7 +31,6 @@ import styled.styledUl
 
 external interface GameModeProps: RProps {
     var roomNames: List<String>
-    var roomName: String?
     var createRoomErrorMsg: String?
     var joinRoomErrorMsg: String?
     var onRoomNameChange: (String) -> Unit
@@ -103,7 +102,6 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
                             GameState.JOIN -> {
                                 joinRoom {
                                     roomNames = props.roomNames
-                                    roomName = props.roomName
                                     errorMsg = props.joinRoomErrorMsg
                                     onRoomNameChange = props.onRoomNameChange
                                     onAdminJoinBtnClick = props.onAdminJoinBtnClick

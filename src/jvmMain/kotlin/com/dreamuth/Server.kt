@@ -59,7 +59,7 @@ fun Application.myModule() {
     // This installs the websockets feature to be able to establish a bidirectional configuration
     // between the server and the client
     install(WebSockets) {
-        pingPeriod = Duration.ofMinutes(1)
+        pingPeriod = Duration.ofSeconds(5)
         maxFrameSize = Long.MAX_VALUE
     }
 

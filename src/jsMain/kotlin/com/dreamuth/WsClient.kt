@@ -70,6 +70,8 @@ class WsClient(private val client: HttpClient) {
             val frame = session?.incoming?.receive()
             if (frame is Frame.Text) {
                 onReceive(frame.readText())
+            } else {
+                println("Other frame: ${frame.toString()}")
             }
         }
     }

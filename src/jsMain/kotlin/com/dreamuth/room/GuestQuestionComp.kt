@@ -16,7 +16,7 @@
 
 package com.dreamuth.room
 
-import com.dreamuth.Topic
+import com.dreamuth.GuestQuestion
 import kotlinx.css.fontSize
 import kotlinx.css.rem
 import react.RBuilder
@@ -29,12 +29,10 @@ import styled.styledDiv
 import styled.styledP
 
 external interface GuestQuestionProps: RProps {
-    var topic: Topic
-    var question: String
-    var question2: String?
+    var guestQuestion: GuestQuestion
 }
 
-class GuestQuestion : RComponent<GuestQuestionProps, RState>() {
+class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
     override fun RBuilder.render() {
         styledDiv {
             css {
@@ -49,7 +47,7 @@ class GuestQuestion : RComponent<GuestQuestionProps, RState>() {
                         classes = mutableListOf("card-header")
                         fontSize = 1.5.rem
                     }
-                    +props.topic.tamil
+                    +props.guestQuestion.topic.tamilDisplay
                 }
             }
             styledDiv {
@@ -65,9 +63,9 @@ class GuestQuestion : RComponent<GuestQuestionProps, RState>() {
                             classes = mutableListOf("card-text")
                             fontSize = 2.rem
                         }
-                        +props.question
+                        +props.guestQuestion.question
                     }
-                    props.question2?.let { question2 ->
+                    props.guestQuestion.question2?.let { question2 ->
                         styledP {
                             css {
                                 classes = mutableListOf("card-text")
@@ -82,8 +80,8 @@ class GuestQuestion : RComponent<GuestQuestionProps, RState>() {
     }
 }
 
-fun RBuilder.guestQuestion(handler: GuestQuestionProps.() -> Unit): ReactElement {
-    return child(GuestQuestion::class) {
+fun RBuilder.guestQuestionComp(handler: GuestQuestionProps.() -> Unit): ReactElement {
+    return child(GuestQuestionComp::class) {
         this.attrs(handler)
     }
 }

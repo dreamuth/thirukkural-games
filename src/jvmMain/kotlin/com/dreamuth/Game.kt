@@ -22,7 +22,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
-import java.util.*
 import kotlin.concurrent.fixedRateTimer
 
 /**
@@ -56,7 +55,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                             val response = AdminRoomResponse(activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
                             logger.info(userSession, "Created the room [${activeUserInfo.roomName}]")
                             userSession.send(ClientCommand.ADMIN_CREATED_ROOM.name + Json.encodeToString(response))
-                            sendAdminQuestionToMe(actualQuestionState, userInfo)
+//                            sendAdminQuestionToMe(actualQuestionState, userInfo)
                         } else {
                             logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room ${room.name}")
                             userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
@@ -87,7 +86,9 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     val response = AdminRoomResponse(userInfo.adminPasscode!!, userInfo.guestPasscode)
                     userSession.send(ClientCommand.ADMIN_JOINED_ROOM.name + Json.encodeToString(response))
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
-                        sendAdminQuestionToMe(questionState, userInfo)
+                        if (questionState.timerState.isLive) {
+                            sendAdminQuestionToMe(questionState, userInfo)
+                        }
                     }
                 }
             }
@@ -110,7 +111,9 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     gameState.addUserInfo(userInfo)
                     userSession.send(ClientCommand.GUEST_JOINED_ROOM.name)
                     gameState.getQuestionState(userInfo.roomName)?.let { questionState ->
-                        sendGuestQuestionToMe(questionState, userInfo)
+                        if (questionState.timerState.isLive) {
+                            sendGuestQuestionToMe(questionState, userInfo)
+                        }
                     }
                 }
             }
@@ -120,6 +123,8 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
                         questionState.timerState.isLive = true
+                        val selectedTopic = questionState.topicState.selected
+                        sendQuestionToAll(questionState, userInfo)
                         fixedRateTimer(name = "LiveTimer", daemon = true, period = 1000) {
                             println("OnTimer: ${questionState.timerState.isLive} ${questionState.timerState.time}")
                             questionState.timerState.time--
@@ -129,6 +134,10 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                                 }
                             } else {
                                 this.cancel()
+                                questionState.topicState.removeTopic(selectedTopic)
+                                GlobalScope.launch {
+                                    sendTopicsToAll(questionState, userInfo)
+                                }
                             }
                         }
                         sendTimeToAll(questionState, userInfo)
@@ -140,7 +149,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
-                        when (questionState.selectedTopic) {
+                        when (questionState.topicState.selected) {
                             Topic.Athikaram -> questionState.athikaramState.goNext()
                             Topic.Kural, Topic.KuralPorul -> questionState.thirukkuralState.goNext()
                             Topic.FirstWord -> questionState.firstWordState.goNext()
@@ -155,7 +164,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
-                        when (questionState.selectedTopic) {
+                        when (questionState.topicState.selected) {
                             Topic.Athikaram -> questionState.athikaramState.goPrevious()
                             Topic.Kural, Topic.KuralPorul -> questionState.thirukkuralState.goPrevious()
                             Topic.FirstWord -> questionState.firstWordState.goPrevious()
@@ -171,9 +180,10 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                 userInfo?.let {
                     val questionState = gameState.getQuestionState(userInfo.roomName)
                     questionState?.let {
-                        questionState.selectedTopic = newTopic
                         questionState.timerState = TimerState()
-                        sendQuestionToAll(questionState, userInfo)
+                        questionState.topicState.selected = newTopic
+                        sendTopicsToAll(questionState, userInfo)
+                        sendTimeToAll(questionState, userInfo)
                     }
                 }
             }
@@ -196,7 +206,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
     private fun createQuestionState(): QuestionState {
         val thirukkurals = fetchSource()
         return QuestionState(
-            Topic.Athikaram,
+            TopicState(),
             thirukkurals,
             TimerState(),
             AthikaramState(thirukkurals),
@@ -232,8 +242,16 @@ class Game(private val gameState: GameState, private val logger: Logger) {
     }
 
     private suspend fun sendTimeToAll(questionState: QuestionState, userInfo: UserInfo) {
-//        logger.info(userInfo.session, "Sending time to room [${userInfo.roomName}]")
-        sendTimeToAll(questionState.timerState, userInfo)
+        val message = ClientCommand.TIME_UPDATE.name + Json.encodeToString(questionState.timerState)
+        gameState.getSessionsForRoom(userInfo.roomName).forEach { it.trySend(message) }
+    }
+
+    private suspend fun sendTopicsToAll(questionState: QuestionState, userInfo: UserInfo) {
+        logger.info(userInfo.session, "Sending available topics to room [${userInfo.roomName}]")
+        println("Before Json: ${questionState.topicState}")
+        val message = ClientCommand.TOPIC_STATE.name + Json.encodeToString(questionState.topicState)
+        println("Sending msg: $message")
+        gameState.getSessionsForRoom(userInfo.roomName).forEach { it.trySend(message) }
     }
 
     private suspend fun sendAdminQuestionToAllAdmins(adminQuestion: AdminQuestion, userInfo: UserInfo) {
@@ -246,38 +264,33 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         gameState.getGuestSessionsForRoom(userInfo.roomName).forEach { it.trySend(guestMessage) }
     }
 
-    private suspend fun sendTimeToAll(timerState: TimerState, userInfo: UserInfo) {
-        val message = ClientCommand.TIME_UPDATE.name + Json.encodeToString(timerState)
-        gameState.getSessionsForRoom(userInfo.roomName).forEach { it.trySend(message) }
-    }
-
     private fun createAdminQuestion(roomState: QuestionState): AdminQuestion {
-        return when (roomState.selectedTopic) {
+        return when (roomState.topicState.selected) {
             Topic.Athikaram -> {
                 val question = roomState.athikaramState.getCurrent()
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.athikaram == question }
-                createAdminQuestion(roomState.selectedTopic, question, thirukkurals)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
             }
             Topic.KuralPorul -> {
                 val question = roomState.thirukkuralState.getCurrent().porul
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.porul == question }
 
-                createAdminQuestion(roomState.selectedTopic, question, thirukkurals)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
             }
             Topic.FirstWord -> {
                 val question = roomState.firstWordState.getCurrent()
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.words.first() == question }
-                createAdminQuestion(roomState.selectedTopic, question, thirukkurals)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
             }
             Topic.LastWord -> {
                 val question = roomState.lastWordState.getCurrent()
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.words.last() == question }
-                createAdminQuestion(roomState.selectedTopic, question, thirukkurals)
+                createAdminQuestion(roomState.topicState.selected, question, thirukkurals)
             }
             Topic.Kural -> {
                 val question = roomState.thirukkuralState.getCurrent().kural
                 val thirukkurals = roomState.thirukkuralState.kurals.filter { it.kural == question }
-                createMessage(roomState.selectedTopic, question, thirukkurals)
+                createMessage(roomState.topicState.selected, question, thirukkurals)
             }
         }
     }

@@ -47,18 +47,46 @@ data class Thirukkural(
 data class KuralOnly(val firstLine: String, val secondLine: String)
 
 @Serializable
+enum class Topic(val tamilDisplay: String) {
+    FirstWord("முதல் வார்த்தை"),
+    Athikaram("அதிகாரம்"),
+    Kural("குறள்"),
+    KuralPorul("பொருள்"),
+    LastWord("கடைசி வார்த்தை");
+
+    companion object {
+        fun getTopic(tamilDisplay: String): Topic {
+            return values().first { it.tamilDisplay == tamilDisplay }
+        }
+    }
+}
+
+@Serializable
 data class AdminQuestion(
-    val topic: Topic,
-    val question: String,
-    val thirukkurals: List<Thirukkural>,
+    val topic: Topic = Topic.Athikaram,
+    val question: String = "Loading...",
+    val thirukkurals: List<Thirukkural> = listOf(),
     val question2: String? = null
 )
 
 @Serializable
-data class GuestQuestion(val topic: Topic, val question: String, val question2: String? = null)
+data class GuestQuestion(
+    val topic: Topic = Topic.Athikaram,
+    val question: String = "Loading...",
+    val question2: String? = null)
 
 @Serializable
 data class TimerState(var isLive: Boolean = false, var time: Long = 30)
+
+@Serializable
+data class TopicState(
+    var selected: Topic = Topic.Athikaram,
+    var availableTopics: MutableList<Topic> = Topic.values().toMutableList()
+) {
+    fun removeTopic(topic: Topic) {
+        availableTopics.remove(topic)
+    }
+}
 
 @Serializable
 data class RoomNamesData(val roomNames: List<String>)
@@ -86,21 +114,8 @@ enum class ClientCommand {
     ACTIVE_ROOMS,
     ADMIN_QUESTION,
     GUEST_QUESTION,
-    TIME_UPDATE;
-}
-
-enum class Topic(val tamil: String) {
-    FirstWord("முதல் வார்த்தை"),
-    Athikaram("அதிகாரம்"),
-    Kural("குறள்"),
-    KuralPorul("பொருள்"),
-    LastWord("கடைசி வார்த்தை");
-
-    companion object {
-        fun getTopic(tamil: String): Topic {
-            return values().first { it.tamil == tamil }
-        }
-    }
+    TIME_UPDATE,
+    TOPIC_STATE;
 }
 
 suspend fun WebSocketSession.trySend(message: String) {

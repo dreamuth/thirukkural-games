@@ -47,7 +47,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
         styledButton {
             val activeStyle = if (props.timerState.isLive) "active" else ""
             css {
-                classes = mutableListOf("btn btn-danger mr-2 $activeStyle")
+                classes = mutableListOf("btn btn-primary mr-2 $activeStyle")
                 width = props.buttonSize
                 attrs {
                     disabled = props.timerState.time <= 0
@@ -69,7 +69,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
                 classes = mutableListOf("btn btn-success mr-2")
                 width = props.buttonSize
                 attrs {
-                    disabled = props.timerState.time <= 0
+                    disabled = props.timerState.time <= 0 || !props.timerState.isLive
                 }
             }
             attrs {
@@ -86,7 +86,7 @@ class Navigation : RComponent<NavigationProps, RState>() {
                 classes = mutableListOf("btn btn-success")
                 width = props.buttonSize
                 attrs {
-                    disabled = props.timerState.time <= 0
+                    disabled = props.timerState.time <= 0 || !props.timerState.isLive
                 }
             }
             attrs {

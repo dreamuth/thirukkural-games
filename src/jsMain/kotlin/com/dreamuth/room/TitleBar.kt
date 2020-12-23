@@ -19,6 +19,7 @@ package com.dreamuth.room
 import com.dreamuth.ServerCommand
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
+import com.dreamuth.TopicState
 import com.dreamuth.components.dropdown
 import com.dreamuth.scope
 import com.dreamuth.wsClient
@@ -35,7 +36,7 @@ import styled.styledDiv
 
 external interface TitleBarProps: RProps {
     var timerState: TimerState
-    var selectedTopic: Topic
+    var topicState: TopicState
     var firstRowStyle: String
     var firstRowWidth: LinearDimension?
     var personButtonWidth: LinearDimension?
@@ -66,18 +67,15 @@ class TitleBar : RComponent<TitleBarProps, RState>() {
                     dropdown {
                         id = "topicDropDown"
                         names = listOf(
-                            listOf(
-                                Topic.Athikaram.tamil,
-                                Topic.FirstWord.tamil,
-                                Topic.LastWord.tamil,
-                                Topic.KuralPorul.tamil,
-                                Topic.Kural.tamil
-                            )
+                            props.topicState.availableTopics.map { it.tamilDisplay }
                         )
-                        selectedName = props.selectedTopic.tamil
+                        selectedName = if (props.topicState.availableTopics.isNotEmpty()) props.topicState.selected.tamilDisplay else "Done"
                         onDropdownClick = { _, name ->
-                            scope.launch {
-                                wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + Topic.getTopic(name))
+                            val expectedTopic = Topic.getTopic(name)
+                            if (props.topicState.selected != expectedTopic) {
+                                scope.launch {
+                                    wsClient.trySend(ServerCommand.TOPIC_CHANGE.name + expectedTopic)
+                                }
                             }
                         }
                     }

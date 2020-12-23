@@ -17,15 +17,18 @@
 package com.dreamuth.login
 
 import com.dreamuth.AdminJoinRoom
+import com.dreamuth.AdminQuestion
 import com.dreamuth.GameState
 import com.dreamuth.GuestJoinRoom
+import com.dreamuth.GuestQuestion
 import com.dreamuth.Room
 import com.dreamuth.ServerCommand
 import com.dreamuth.Thirukkural
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
+import com.dreamuth.TopicState
 import com.dreamuth.room.adminRoom
-import com.dreamuth.room.guestQuestion
+import com.dreamuth.room.guestQuestionComp
 import com.dreamuth.room.roomInfo
 import com.dreamuth.scope
 import com.dreamuth.student.studentInfo
@@ -42,13 +45,12 @@ import styled.styledDiv
 
 external interface GameStateCompProps: RProps {
     var gameState: GameState
+    var topicState: TopicState
     var roomNames: List<String>
     var roomName: String?
     var timerState: TimerState
-    var topic: Topic
-    var question: String
-    var question2: String?
-    var thirukkurals: List<Thirukkural>
+    var adminQuestion: AdminQuestion
+    var guestQuestion: GuestQuestion
     var adminPasscode: String?
     var guestPasscode: String?
     var createRoomErrorMsg: String?
@@ -114,11 +116,9 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                         classes = mutableListOf("col-9 pr-0")
                     }
                     adminRoom {
-                        topic = props.topic
                         timerState = props.timerState
-                        question = props.question
-                        question2 = props.question2
-                        thirukkurals = props.thirukkurals
+                        topicState = props.topicState
+                        adminQuestion = props.adminQuestion
                     }
                 }
                 styledDiv {
@@ -138,10 +138,8 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
             }
         }
         GameState.GUEST_ROOM -> {
-            guestQuestion {
-                topic = props.topic
-                question = props.question
-                question2 = props.question2
+            guestQuestionComp {
+                guestQuestion = props.guestQuestion
             }
         }
         else -> println("Error state...")

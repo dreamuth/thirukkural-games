@@ -16,10 +16,11 @@
 
 package com.dreamuth.room
 
+import com.dreamuth.AdminQuestion
 import com.dreamuth.KuralOnly
-import com.dreamuth.Thirukkural
 import com.dreamuth.TimerState
 import com.dreamuth.Topic
+import com.dreamuth.TopicState
 import kotlinx.css.pct
 import kotlinx.css.px
 import kotlinx.css.rem
@@ -33,11 +34,9 @@ import styled.styledDiv
 import styled.styledImg
 
 external interface AdminRoomProps: RProps {
-    var topic: Topic
+    var topicState: TopicState
     var timerState: TimerState
-    var question: String
-    var question2: String?
-    var thirukkurals: List<Thirukkural>
+    var adminQuestion: AdminQuestion
 }
 
 
@@ -52,8 +51,8 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
 //            classes = mutableListOf("d-none d-lg-block")
             }
             titleBar {
-                selectedTopic = props.topic
                 timerState = props.timerState
+                topicState = props.topicState
                 firstRowStyle = "col pl-0 pr-0"
                 topicButtonWidth = 200.px
                 secondRowStyle = "col-md-auto pr-0"
@@ -62,19 +61,19 @@ private var adminRoom = functionalComponent<AdminRoomProps> { props ->
             }
         }
         if (props.timerState.isLive) {
-            when (props.topic) {
+            when (props.adminQuestion.topic) {
                 Topic.Kural -> {
                     kuralQuestion {
-                        question = KuralOnly(props.question, props.question2!!)
+                        question = KuralOnly(props.adminQuestion.question, props.adminQuestion.question2!!)
                         questionSize = 2.rem
-                        thirukkurals = props.thirukkurals
+                        thirukkurals = props.adminQuestion.thirukkurals
                     }
                 }
                 else -> {
                     stringQuestion {
-                        question = props.question
+                        question = props.adminQuestion.question
                         questionSize = 2.rem
-                        thirukkurals = props.thirukkurals
+                        thirukkurals = props.adminQuestion.thirukkurals
                     }
                 }
             }

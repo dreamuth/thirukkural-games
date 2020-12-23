@@ -127,7 +127,7 @@ private var studentInfo = functionalComponent<StudentInfoProps> { props ->
                     }
                     Topic.values().forEach {
                         customRadio(
-                            it.tamil,
+                            it.tamilDisplay,
                             it == props.selectedCategory,
                             !props.availableCategories.contains(it),
                             props.onCategoryChangeFunction

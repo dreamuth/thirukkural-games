@@ -51,10 +51,9 @@ external interface AppState: RState {
     var isLoaded: Boolean
     var gameState: GameState
     var timerState: TimerState
-    var topic: Topic
-    var question: String
-    var question2: String?
-    var thirukkurals: List<Thirukkural>
+    var topicState: TopicState
+    var adminQuestion: AdminQuestion
+    var guestQuestion: GuestQuestion
     var roomName: String?
     var roomNames: List<String>
     var isAdminRoom: Boolean
@@ -69,17 +68,17 @@ class App : RComponent<RProps, AppState> () {
         scope.launch {
             setState {
                 gameState = GameState.NONE
-                topic = Topic.Athikaram
-                question = "Loading..."
-                thirukkurals = listOf()
+                topicState = TopicState()
+                timerState = TimerState()
+                adminQuestion = AdminQuestion()
+                guestQuestion = GuestQuestion()
                 roomNames = listOf()
                 isAdminRoom = false
-                timerState = TimerState()
                 isLoaded = true
             }
             wsClient.initConnection()
             wsClient.receive { message ->
-                println(message)
+                println("Received: $message")
                 when {
                     message.startsWith(ClientCommand.ACTIVE_ROOMS.name) -> {
                         val data = message.removePrefix(ClientCommand.ACTIVE_ROOMS.name)
@@ -99,6 +98,7 @@ class App : RComponent<RProps, AppState> () {
                             isAdminRoom = true
                             adminPasscode = adminRoomResponse.adminPasscode
                             guestPasscode = adminRoomResponse.guestPasscode
+                            gameState = GameState.ADMIN_ROOM
                         }
                     }
                     message.startsWith(ClientCommand.ADMIN_JOINED_ROOM.name) -> {
@@ -110,35 +110,27 @@ class App : RComponent<RProps, AppState> () {
                             isAdminRoom = true
                             adminPasscode = adminRoomResponse.adminPasscode
                             guestPasscode = adminRoomResponse.guestPasscode
+                            gameState = GameState.ADMIN_ROOM
                         }
                     }
                     message.startsWith(ClientCommand.ADMIN_QUESTION.name) -> {
                         val data = message.removePrefix(ClientCommand.ADMIN_QUESTION.name)
-                        val adminQuestion = Json.decodeFromString<AdminQuestion>(data)
+                        val receivedAdminQuestion = Json.decodeFromString<AdminQuestion>(data)
                         setState {
-                            if (topic != adminQuestion.topic) {
-                                timerState = TimerState()
-                            }
-                            topic = adminQuestion.topic
-                            question = adminQuestion.question
-                            question2 = adminQuestion.question2
-                            thirukkurals = adminQuestion.thirukkurals
-                            gameState = GameState.ADMIN_ROOM
-//                            gameState = GameState.CATEGORY_SELECTION
+                            adminQuestion = receivedAdminQuestion
+                            // TODO: Do we need to reset the timer?
+                        }
+                    }
+                    message.startsWith(ClientCommand.GUEST_JOINED_ROOM.name) -> {
+                        setState {
+                            gameState = GameState.GUEST_ROOM
                         }
                     }
                     message.startsWith(ClientCommand.GUEST_QUESTION.name) -> {
                         val data = message.removePrefix(ClientCommand.GUEST_QUESTION.name)
-                        val guestQuestion = Json.decodeFromString<GuestQuestion>(data)
+                        val receivedGuestQuestion = Json.decodeFromString<GuestQuestion>(data)
                         setState {
-                            if (topic != guestQuestion.topic) {
-                                timerState = TimerState()
-                            }
-                            topic = guestQuestion.topic
-                            question = guestQuestion.question
-                            question2 = guestQuestion.question2
-                            thirukkurals = listOf()
-                            gameState = GameState.GUEST_ROOM
+                            guestQuestion = receivedGuestQuestion
                         }
                     }
                     message.startsWith(ClientCommand.TIME_UPDATE.name) -> {
@@ -148,12 +140,20 @@ class App : RComponent<RProps, AppState> () {
                             timerState = receivedTimerState
                         }
                     }
+                    message.startsWith(ClientCommand.TOPIC_STATE.name) -> {
+                        val data = message.removePrefix(ClientCommand.TOPIC_STATE.name)
+                        val receivedTopicState = Json.decodeFromString<TopicState>(data)
+                        setState {
+                            topicState = receivedTopicState
+                        }
+                    }
                     message.startsWith(ClientCommand.SIGN_OUT.name) -> {
                         setState {
                             gameState = GameState.NONE
-                            topic = Topic.Athikaram
-                            question = "Loading..."
-                            thirukkurals = listOf()
+                            timerState = TimerState()
+                            topicState = TopicState()
+                            adminQuestion = AdminQuestion()
+                            guestQuestion = GuestQuestion()
                             isAdminRoom = false
                         }
                     }
@@ -211,11 +211,10 @@ class App : RComponent<RProps, AppState> () {
                         gameState = state.gameState
                         roomName = state.roomName
                         roomNames = state.roomNames
-                        topic = state.topic
+                        adminQuestion = state.adminQuestion
+                        guestQuestion = state.guestQuestion
                         timerState = state.timerState
-                        question = state.question
-                        question2 = state.question2
-                        thirukkurals = state.thirukkurals
+                        topicState = state.topicState
                         adminPasscode = state.adminPasscode
                         guestPasscode = state.guestPasscode
                         createRoomErrorMsg = state.createRoomErrorMsg

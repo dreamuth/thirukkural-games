@@ -16,12 +16,26 @@
 
 package com.dreamuth
 
+import com.google.cloud.secretmanager.v1.SecretManagerServiceClient
+import com.google.cloud.secretmanager.v1.SecretVersionName
 import io.ktor.http.cio.websocket.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
+import java.io.UnsupportedEncodingException
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import javax.mail.Authenticator
+import javax.mail.Message
+import javax.mail.MessagingException
+import javax.mail.PasswordAuthentication
+import javax.mail.Session
+import javax.mail.Transport
+import javax.mail.internet.AddressException
+import javax.mail.internet.InternetAddress
+import javax.mail.internet.MimeMessage
 import kotlin.collections.LinkedHashSet
 
 /**
@@ -68,8 +82,55 @@ class GameState(private val logger: Logger) {
                     questionState.timerState = TimerState()
                     logger.info(userInfo, "room removed")
                     sendActiveRoomsToAllUsers()
+                    GlobalScope.launch {
+                        SecretManagerServiceClient.create().use {
+                            val secretVersionName = SecretVersionName.of("thirukkural-games", "email-password", "3")
+                            val response = it.accessSecretVersion(secretVersionName)
+                            val data = response.payload.data.toStringUtf8()
+                            sendReport(userInfo, questionState, data)
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private fun sendReport(userInfo: UserInfo, questionState: QuestionState, data: String) {
+        val properties = Properties()
+        properties.setProperty("mail.smtp.host", "smtp.gmail.com")
+        properties.setProperty("mail.smtp.port", "587")
+        properties.setProperty("mail.smtp.auth", "true")
+        properties.setProperty("mail.smtp.starttls.enable", "true")
+        val session = Session.getInstance(properties, object : Authenticator() {
+            override fun getPasswordAuthentication(): PasswordAuthentication {
+                return PasswordAuthentication("uttran.ishtalingam@gmail.com", data)
+            }
+        })
+
+        try {
+            val msg = MimeMessage(session)
+            msg.setFrom(InternetAddress("uttran.ishtalingam@gmail.com", "HTS Kids Thirukkural Games 2021"))
+            msg.addRecipient(Message.RecipientType.TO, InternetAddress("dreamuth@gmail.com"))
+            msg.setSubject("HTS Kids Thirukkural Games 2021 : [${userInfo.roomName}] score", "UTF-8")
+            val text = """
+                Student: ${userInfo.roomName}
+                
+                ${Topic.Athikaram.tamilDisplay} : ${questionState.scoreState.score[Topic.Athikaram]?.count()}
+                ${Topic.KuralPorul.tamilDisplay} : ${questionState.scoreState.score[Topic.KuralPorul]?.count()}
+                ${Topic.Kural.tamilDisplay} : ${questionState.scoreState.score[Topic.Kural]?.count()}
+                ${Topic.FirstWord.tamilDisplay} : ${questionState.scoreState.score[Topic.FirstWord]?.count()}
+                ${Topic.LastWord.tamilDisplay} : ${questionState.scoreState.score[Topic.LastWord]?.count()}
+                
+                Total: ${questionState.scoreState.score.values.flatten().count()}
+            """.trimIndent()
+            msg.setText(text, "UTF-8")
+            Transport.send(msg)
+        } catch (e: AddressException) {
+            logger.error(userInfo, "Failed to send email", e)
+        } catch (e: MessagingException) {
+            logger.error(userInfo, "Failed to send email", e)
+        } catch (e: UnsupportedEncodingException) {
+            logger.error(userInfo, "Failed to send email", e)
         }
     }
 

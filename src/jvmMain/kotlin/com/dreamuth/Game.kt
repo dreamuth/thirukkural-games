@@ -376,6 +376,10 @@ fun Logger.info(userInfo: UserInfo, message: String) {
     info("[${userInfo.roomName}] [${userInfo.userType.name}] [${userInfo.session.name}] : $message.")
 }
 
+fun Logger.error(userInfo: UserInfo, message: String, throwable: Throwable) {
+    error("[${userInfo.roomName}] [${userInfo.userType.name}] [${userInfo.session.name}] : $message.", throwable)
+}
+
 fun Logger.info(userSession: UserSession, message: String) {
     info("[ ] [ ] [${userSession.name}] : $message.")
 }

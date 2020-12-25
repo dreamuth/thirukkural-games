@@ -124,31 +124,41 @@ class Game(private val gameState: GameState, private val logger: Logger) {
             }
             command.startsWith(ServerCommand.START_GAME.name) -> {
                 val userInfo = gameState.getUserInfo(userSession)
-                userInfo?.let {
-                    val questionState = gameState.getQuestionState(userInfo.roomName)
+                userInfo?.let { activeUserInfo ->
+                    val questionState = gameState.getQuestionState(activeUserInfo.roomName)
                     questionState?.let {
                         questionState.timerState.isLive = true
                         val selectedTopic = questionState.topicState.selected
-                        logger.info(userInfo, "Started the game")
-                        sendQuestionToAll(questionState, userInfo)
-                        fixedRateTimer(name = "LiveTimer", daemon = true, period = 1000) {
-//                            println("OnTimer: ${questionState.timerState.isLive} ${questionState.timerState.time}")
-                            questionState.timerState.time--
-                            if (questionState.timerState.isLive && questionState.timerState.time >= 0) {
-                                GlobalScope.launch {
-                                    sendTimeToAll(questionState, userInfo)
-                                }
-                            } else {
-                                this.cancel()
-                                if (questionState.timerState.time < 0) {
-                                    questionState.timerState.time = 0
-                                }
-                                questionState.topicState.removeTopic(selectedTopic)
-                                GlobalScope.launch {
-                                    sendTopicsToAll(questionState, userInfo)
-                                }
-                            }
+                        logger.info(activeUserInfo, "Started the game")
+                        sendQuestionToAll(questionState, activeUserInfo)
+                        questionState.timer = createTimer(questionState, activeUserInfo, selectedTopic)
+                        sendTimeToAll(questionState, activeUserInfo)
+                    }
+                }
+            }
+            command.startsWith(ServerCommand.PAUSE_GAME.name) -> {
+                val userInfo = gameState.getUserInfo(userSession)
+                userInfo?.let {
+                    val questionState = gameState.getQuestionState(userInfo.roomName)
+                    questionState?.let {
+                        logger.info(userInfo, "Asked pause the game")
+                        questionState.timer?.let {
+                            it.cancel()
+                            questionState.timerState = questionState.timerState.copy(isPaused = true)
+                            sendTimeToAll(questionState, userInfo)
                         }
+                    }
+                }
+            }
+            command.startsWith(ServerCommand.RESUME_GAME.name) -> {
+                val userInfo = gameState.getUserInfo(userSession)
+                userInfo?.let {
+                    val questionState = gameState.getQuestionState(userInfo.roomName)
+                    questionState?.let {
+                        val selectedTopic = questionState.topicState.selected
+                        logger.info(userInfo, "Asked resume the game")
+                        questionState.timerState = questionState.timerState.copy(isPaused = false)
+                        questionState.timer = createTimer(questionState, userInfo, selectedTopic)
                         sendTimeToAll(questionState, userInfo)
                     }
                 }
@@ -233,6 +243,28 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         }
     }
 
+    private fun createTimer(
+        questionState: QuestionState,
+        userInfo: UserInfo,
+        selectedTopic: Topic
+    ) = fixedRateTimer(daemon = true, period = 1000) {
+        questionState.timerState.time--
+        if (questionState.timerState.isLive && questionState.timerState.time >= 0) {
+            GlobalScope.launch {
+                sendTimeToAll(questionState, userInfo)
+            }
+        } else {
+            this.cancel()
+            if (questionState.timerState.time < 0) {
+                questionState.timerState.time = 0
+            }
+            questionState.topicState.removeTopic(selectedTopic)
+            GlobalScope.launch {
+                sendTopicsToAll(questionState, userInfo)
+            }
+        }
+    }
+
     private fun createAdminRoom(userSession: UserSession, room: Room, gameState: GameState) = UserInfo(
         session = userSession,
         roomName = room.name,
@@ -249,6 +281,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
             TopicState(),
             thirukkurals,
             TimerState(),
+            null,
             ScoreState(),
             AthikaramState(thirukkurals),
             ThirukkuralState(thirukkurals),

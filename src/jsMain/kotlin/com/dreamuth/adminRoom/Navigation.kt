@@ -62,22 +62,32 @@ object ComponentStyles: StyleSheet("ComponentStyles", isStatic = true) {
 class Navigation : RComponent<NavigationProps, RState>() {
     override fun RBuilder.render() {
         styledButton {
-            val activeStyle = if (props.timerState.isLive) "active" else ""
             css {
-                val style = if (props.timerState.isLive && props.timerState.time == 0L) "danger" else "primary"
-                classes = mutableListOf("btn btn-$style mr-2 $activeStyle rounded-pill")
-                width = props.buttonSize
+                val style = when {
+                    props.timerState.isLive && props.timerState.time == 0L -> "danger"
+                    props.timerState.isPaused -> "secondary"
+                    else -> "primary"
+                }
+                classes = mutableListOf("btn btn-$style mr-2 rounded-pill")
+                width = 150.px
                 attrs {
                     disabled = props.timerState.time <= 0
                 }
             }
-            if (props.timerState.isLive) +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60} " else +"தொடங்கு"
+            when {
+                props.timerState.isLive && props.timerState.isPaused -> +"தொடர் (${props.timerState.time / 60 % 60} : ${props.timerState.time % 60})"
+                props.timerState.isLive -> +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60}"
+                else -> +"தொடங்கு"
+            }
             attrs {
                 onClickFunction = {
-                    if (!props.timerState.isLive) {
-                        scope.launch {
-                            wsClient.trySend(ServerCommand.START_GAME)
+                    scope.launch {
+                        val serverCommand = when {
+                            !props.timerState.isLive -> ServerCommand.START_GAME
+                            props.timerState.isLive && !props.timerState.isPaused -> ServerCommand.PAUSE_GAME
+                            else -> ServerCommand.RESUME_GAME
                         }
+                        wsClient.trySend(serverCommand)
                     }
                 }
             }

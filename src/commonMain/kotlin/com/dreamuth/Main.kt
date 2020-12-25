@@ -99,7 +99,7 @@ data class GuestQuestion(
     val question2: String? = null)
 
 @Serializable
-data class TimerState(var isLive: Boolean = false, var time: Long = 181)
+data class TimerState(var isLive: Boolean = false, var isPaused: Boolean = false, var time: Long = 181)
 
 @Serializable
 data class TopicState(
@@ -122,6 +122,8 @@ enum class ServerCommand {
     ADMIN_JOIN_ROOM,
     GUEST_JOIN_ROOM,
     START_GAME,
+    PAUSE_GAME,
+    RESUME_GAME,
     NEXT,
     PREVIOUS,
     RIGHT_ANSWER,

@@ -17,6 +17,7 @@
 package com.dreamuth
 
 import io.ktor.http.cio.websocket.*
+import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
 
@@ -54,6 +55,7 @@ data class QuestionState(
     var topicState: TopicState,
     var thirukkurals: List<Thirukkural>,
     var timerState: TimerState,
+    var timer: Timer? = null,
     var scoreState: ScoreState,
     var athikaramState: AthikaramState,
     var thirukkuralState: ThirukkuralState,

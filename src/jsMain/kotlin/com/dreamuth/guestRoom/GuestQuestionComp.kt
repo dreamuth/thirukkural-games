@@ -49,7 +49,7 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                 }
                 styledDiv {
                     css {
-                        classes = mutableListOf("col-9 pr-0")
+                        classes = mutableListOf("col-6 pr-0")
                     }
                     styledDiv {
                         css {
@@ -66,7 +66,7 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                 }
                 styledDiv {
                     css {
-                        classes = mutableListOf("col-3 pl-0")
+                        classes = mutableListOf("col-6 pl-0")
                     }
                     styledDiv {
                         css {
@@ -78,7 +78,11 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                                 classes = mutableListOf("card-header")
                                 fontSize = 1.5.rem
                             }
-                            if (props.timerState.isLive) +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60} " else +"Time"
+                            when {
+                                props.timerState.isLive && props.timerState.isPaused -> +"நேரம்: இடைநிறுத்தப்பட்டது"
+                                props.timerState.isLive -> +"நேரம்: ${props.timerState.time / 60 % 60} : ${props.timerState.time % 60}"
+                                else -> +"நேரம்: தொடங்கவில்லை"
+                            }
                         }
                     }
                 }

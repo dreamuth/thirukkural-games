@@ -21,7 +21,7 @@ import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Room(val name: String, val group: Group = Group.TWO)
+data class Room(val name: String, val school: School = School.PEARLAND, val group: Group = Group.TWO)
 
 @Serializable
 data class AdminRoomResponse(var roomName: String, val adminPasscode: String, val guestPasscode: String)
@@ -45,6 +45,28 @@ data class Thirukkural(
 
 @Serializable
 data class KuralOnly(val firstLine: String, val secondLine: String)
+
+@Serializable
+enum class School(val tamilDisplay: String, val englishDisplay: String) {
+    PEARLAND("பியர்லேண்ட் தமிழ்ப் பள்ளி", "Pearland + Clearlake"),
+    KATY("கேட்டி தமிழ்ப் பள்ளி", "Katy"),
+    SUGARLAND("சுகர்லேண்ட் தமிழ்ப் பள்ளி", "West Katy"),
+    WEST_KATY("மேற்கு கேட்டி தமிழ்ப் பள்ளி", "West Houston"),
+    WEST_HOUSTON("மேற்கு ஹூஸ்டன் தமிழ்ப் பள்ளி", "Sugar Land"),
+    WOODLANDS("உட்லேண்ட்ஸ் தமிழ்ப் பள்ளி", "Woodlands");
+
+    companion object {
+        fun getSchool(tamilDisplay: String): School {
+            return values().first { it.tamilDisplay == tamilDisplay }
+        }
+    }
+}
+
+@Serializable
+enum class Group(val englishDisplay: String) {
+    TWO("7 to 10"),
+    THREE("Above 10")
+}
 
 @Serializable
 enum class Topic(val tamilDisplay: String) {
@@ -94,9 +116,6 @@ data class StudentScore(var score: Map<Topic, Int> = Topic.values().map { it to 
 
 @Serializable
 data class RoomNamesData(val roomNames: List<String>)
-
-@Serializable
-enum class Group { TWO, THREE }
 
 enum class ServerCommand {
     CREATE_ROOM,

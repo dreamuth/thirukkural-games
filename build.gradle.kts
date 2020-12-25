@@ -82,8 +82,16 @@ kotlin {
                 implementation("io.ktor:ktor-html-builder:$ktorVersion")
                 implementation("io.ktor:ktor-client-cio:$ktorVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.2")
+
+                // Google secrets
                 implementation("com.google.cloud:google-cloud-secretmanager:1.2.6")
+
+                // Email
                 implementation("com.sun.mail:javax.mail:1.6.2")
+
+                // Sheets report
+                implementation("com.google.auth:google-auth-library-oauth2-http:0.22.2")
+                implementation("com.google.apis:google-api-services-sheets:v4-rev581-1.25.0")
             }
         }
         val jvmTest by getting

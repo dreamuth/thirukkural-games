@@ -18,6 +18,7 @@ package com.dreamuth.login
 
 import com.dreamuth.Group
 import com.dreamuth.Room
+import com.dreamuth.School
 import com.dreamuth.ServerCommand
 import com.dreamuth.components.linkItem
 import com.dreamuth.scope
@@ -25,15 +26,18 @@ import com.dreamuth.wsClient
 import kotlinx.coroutines.launch
 import kotlinx.html.ButtonType
 import kotlinx.html.InputType
+import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
 import react.RProps
 import react.child
+import react.dom.option
 import react.functionalComponent
 import react.useState
 import styled.css
@@ -42,6 +46,7 @@ import styled.styledDiv
 import styled.styledForm
 import styled.styledInput
 import styled.styledLabel
+import styled.styledSelect
 import styled.styledSmall
 import styled.styledUl
 
@@ -52,6 +57,7 @@ external interface CreateRoomProps: RProps {
 private var createRoom = functionalComponent<CreateRoomProps> { props ->
     var roomName by useState("")
     var group by useState(Group.TWO)
+    var school by useState(School.PEARLAND)
 
     styledForm {
         css {
@@ -63,7 +69,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
             onSubmitFunction = {
                 it.preventDefault()
                 scope.launch {
-                    val data = Json.encodeToString(Room(roomName.trim(), group))
+                    val data = Json.encodeToString(Room(roomName.trim(), school, group))
                     wsClient.trySend(ServerCommand.CREATE_ROOM.name + data)
                 }
             }
@@ -111,6 +117,32 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                 +"Password is hardcoded for demo purpose, before game it will be removed"
             }
         }
+        styledDiv {
+            css {
+                classes = mutableListOf("form-group")
+            }
+            styledLabel {
+                +"School"
+            }
+            styledSelect {
+                css {
+                    classes = mutableListOf("form-control custom-select")
+                    attrs {
+                        id = "selectSchool1"
+                    }
+                }
+                School.values().forEach { school ->
+                    option { +school.tamilDisplay }
+                }
+                attrs {
+                    onChangeFunction = {
+                        val target = it.target as HTMLSelectElement
+                        school = School.getSchool(target.value)
+                    }
+                }
+            }
+        }
+
         styledDiv {
             css {
                 classes = mutableListOf("form-group")

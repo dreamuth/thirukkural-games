@@ -49,6 +49,8 @@ data class UserInfo(
     val adminPasscode: String? = null)
 
 data class QuestionState(
+    val school: School,
+    val group: Group,
     var topicState: TopicState,
     var thirukkurals: List<Thirukkural>,
     var timerState: TimerState,

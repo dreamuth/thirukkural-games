@@ -36,7 +36,6 @@ fun main() {
     val myPort = System.getenv("PORT")?.toInt() ?: 9090
     embeddedServer(
         Netty,
-//        watchPaths = listOf("thirukkural-games"),
         port = myPort,
         module = Application::myModule
     ).apply { start(wait = true) }

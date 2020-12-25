@@ -16,6 +16,14 @@
 
 package com.dreamuth
 
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
+import com.google.api.client.http.HttpRequestInitializer
+import com.google.api.client.json.jackson2.JacksonFactory
+import com.google.api.services.sheets.v4.Sheets
+import com.google.api.services.sheets.v4.SheetsScopes
+import com.google.api.services.sheets.v4.model.ValueRange
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient
 import com.google.cloud.secretmanager.v1.SecretVersionName
 import io.ktor.http.cio.websocket.*
@@ -25,6 +33,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
 import java.io.UnsupportedEncodingException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.mail.Authenticator
@@ -43,6 +53,8 @@ import kotlin.collections.LinkedHashSet
  * @author Uttran Ishtalingam
  */
 class GameState(private val logger: Logger) {
+    private val projectName = "thirukkural-games"
+
     private val allUserSessions = Collections.synchronizedSet(LinkedHashSet<UserSession>())
     private val users = ConcurrentHashMap<UserSession, UserInfo>()
     private val rooms = ConcurrentHashMap<String, QuestionState>()
@@ -84,15 +96,58 @@ class GameState(private val logger: Logger) {
                     sendActiveRoomsToAllUsers()
                     GlobalScope.launch {
                         SecretManagerServiceClient.create().use {
-                            val secretVersionName = SecretVersionName.of("thirukkural-games", "email-password", "3")
-                            val response = it.accessSecretVersion(secretVersionName)
-                            val data = response.payload.data.toStringUtf8()
-                            sendReport(userInfo, questionState, data)
+                            val emailSecretName = SecretVersionName.of(projectName, "email-password", "3")
+                            val emailResponse = it.accessSecretVersion(emailSecretName)
+                            val emailSecret = emailResponse.payload.data.toStringUtf8()
+                            sendReport(userInfo, questionState, emailSecret)
+
+                            val sheetsSecretName = SecretVersionName.of(projectName, "service-account-json", "1")
+                            val sheetsResponse = it.accessSecretVersion(sheetsSecretName)
+                            val serviceAccount = sheetsResponse.payload.data.toStringUtf8()
+                            updateReportSheet(userInfo, questionState, serviceAccount)
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun updateReportSheet(userInfo: UserInfo, questionState: QuestionState, serviceAccount: String) {
+        val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
+        val spreadsheetId = "1otzHv-6VKUAQuROts9cBjrbVanPaIpZrN-tN60ajgqE"
+        val range = "Score!A3"
+        val jacksonFactory = JacksonFactory.getDefaultInstance()
+
+        val serviceAccountCredentials = ServiceAccountCredentials.fromStream(serviceAccount.byteInputStream())
+        val googleCredentials = serviceAccountCredentials.createScoped(SheetsScopes.SPREADSHEETS)
+        val requestInitializer: HttpRequestInitializer = HttpCredentialsAdapter(googleCredentials)
+
+        val service = Sheets.Builder(httpTransport, jacksonFactory, requestInitializer)
+            .setApplicationName(projectName)
+            .build()
+        val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"))
+        val values = ValueRange().setValues(
+            listOf(
+                listOf<Any>(
+                    timeNow,
+                    questionState.school.englishDisplay,
+                    questionState.group.englishDisplay,
+                    userInfo.roomName,
+                    questionState.scoreState.score[Topic.Athikaram]!!.count(),
+                    questionState.scoreState.score[Topic.KuralPorul]!!.count(),
+                    questionState.scoreState.score[Topic.Kural]!!.count(),
+                    questionState.scoreState.score[Topic.FirstWord]!!.count(),
+                    questionState.scoreState.score[Topic.LastWord]!!.count(),
+                    questionState.scoreState.score.values.flatten().count()
+                )
+            )
+        )
+        service.spreadsheets()
+            .values()
+            .append(spreadsheetId, range, values)
+            .setValueInputOption("USER_ENTERED")
+            .setInsertDataOption("INSERT_ROWS")
+            .execute()
     }
 
     private fun sendReport(userInfo: UserInfo, questionState: QuestionState, data: String) {
@@ -113,6 +168,8 @@ class GameState(private val logger: Logger) {
             msg.addRecipient(Message.RecipientType.TO, InternetAddress("dreamuth@gmail.com"))
             msg.setSubject("HTS Kids Thirukkural Games 2021 : [${userInfo.roomName}] score", "UTF-8")
             val text = """
+                School: ${questionState.school.englishDisplay}
+                Age Group: ${questionState.group.englishDisplay}
                 Student: ${userInfo.roomName}
                 
                 ${Topic.Athikaram.tamilDisplay} : ${questionState.scoreState.score[Topic.Athikaram]?.count()}

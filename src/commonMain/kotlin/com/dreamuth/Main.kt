@@ -99,7 +99,7 @@ data class GuestQuestion(
     val question2: String? = null)
 
 @Serializable
-data class TimerState(var isLive: Boolean = false, var isPaused: Boolean = false, var time: Long = 181)
+data class TimerState(var isLive: Boolean = false, var isPaused: Boolean = false, var time: Long = 31)
 
 @Serializable
 data class TopicState(

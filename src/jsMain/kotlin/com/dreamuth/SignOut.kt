@@ -30,7 +30,11 @@ import react.functionalComponent
 import styled.css
 import styled.styledButton
 
-private var signOut = functionalComponent<RProps> {
+external interface SignOutProps: RProps {
+    var onSignOutHandler: () -> Unit
+}
+
+private var signOut = functionalComponent<SignOutProps> { props ->
     styledButton {
         css {
             classes = mutableListOf("btn btn-outline-primary mr-2")
@@ -39,17 +43,13 @@ private var signOut = functionalComponent<RProps> {
             right = 4.px
         }
         attrs {
-            onClickFunction = {
-                scope.launch {
-                    wsClient.trySend(ServerCommand.SIGN_OUT)
-                }
-            }
+            onClickFunction = { props.onSignOutHandler() }
         }
         +"Sign out"
     }
 }
 
-fun RBuilder.signOut(handler: RProps.() -> Unit) = child(signOut) {
+fun RBuilder.signOut(handler: SignOutProps.() -> Unit) = child(signOut) {
     attrs {
         handler()
     }

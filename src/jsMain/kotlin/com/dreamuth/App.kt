@@ -31,6 +31,7 @@ import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
+import react.dom.pre
 import react.setState
 import styled.css
 import styled.styledDiv
@@ -42,14 +43,15 @@ enum class GameState {
     NONE,
     CREATE,
     JOIN,
-    CATEGORY_SELECTION,
     ADMIN_ROOM,
-    GUEST_ROOM
+    GUEST_ROOM,
+    SIGN_OUT_CONFIRM
 }
 
 external interface AppState: RState {
     var isLoaded: Boolean
     var gameState: GameState
+    var previousGameState: GameState?
     var timerState: TimerState
     var topicState: TopicState
     var adminQuestion: AdminQuestion
@@ -127,7 +129,6 @@ class App : RComponent<RProps, AppState> () {
                         val receivedAdminQuestion = Json.decodeFromString<AdminQuestion>(data)
                         setState {
                             adminQuestion = receivedAdminQuestion
-                            // TODO: Do we need to reset the timer?
                         }
                     }
                     message.startsWith(ClientCommand.GUEST_QUESTION.name) -> {
@@ -216,7 +217,14 @@ class App : RComponent<RProps, AppState> () {
                     +"திருக்குறள் விளையாட்டு"
                 }
                 if (state.gameState != GameState.NONE) {
-                    signOut { }
+                    signOut {
+                        onSignOutHandler = {
+                            setState {
+                                previousGameState = gameState
+                                gameState = GameState.SIGN_OUT_CONFIRM
+                            }
+                        }
+                    }
                 }
                 styledDiv {
                     css {
@@ -235,6 +243,12 @@ class App : RComponent<RProps, AppState> () {
                         guestPasscode = state.guestPasscode
                         createRoomErrorMsg = state.createRoomErrorMsg
                         joinRoomErrorMsg = state.joinRoomErrorMsg
+                        onNoClickHandler = {
+                            setState {
+                                gameState = previousGameState!!
+                                previousGameState = null
+                            }
+                        }
                     }
                 }
             }

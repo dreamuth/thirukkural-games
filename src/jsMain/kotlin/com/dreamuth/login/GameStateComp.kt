@@ -21,13 +21,11 @@ import com.dreamuth.GameState
 import com.dreamuth.GuestQuestion
 import com.dreamuth.StudentScore
 import com.dreamuth.TimerState
-import com.dreamuth.Topic
 import com.dreamuth.TopicState
 import com.dreamuth.adminRoom.adminRoom
 import com.dreamuth.adminRoom.roomInfo
 import com.dreamuth.adminRoom.scoreInfo
 import com.dreamuth.guestRoom.guestQuestionComp
-import com.dreamuth.student.studentInfo
 import react.RBuilder
 import react.RProps
 import react.child
@@ -48,6 +46,7 @@ external interface GameStateCompProps: RProps {
     var guestPasscode: String?
     var createRoomErrorMsg: String?
     var joinRoomErrorMsg: String?
+    var onNoClickHandler: () -> Unit
 }
 
 private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
@@ -57,12 +56,6 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                 roomNames = props.roomNames
                 createRoomErrorMsg = props.createRoomErrorMsg
                 joinRoomErrorMsg = props.joinRoomErrorMsg
-            }
-        }
-        GameState.CATEGORY_SELECTION -> {
-            studentInfo {
-                availableCategories = listOf(Topic.Kural, Topic.KuralPorul, Topic.FirstWord)
-                selectedCategory = Topic.KuralPorul
             }
         }
         GameState.ADMIN_ROOM -> {
@@ -103,6 +96,11 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
             guestQuestionComp {
                 guestQuestion = props.guestQuestion
                 timerState = props.timerState
+            }
+        }
+        GameState.SIGN_OUT_CONFIRM -> {
+            signOutConfirm {
+                onNoClickHandler = props.onNoClickHandler
             }
         }
         else -> println("Error state...")

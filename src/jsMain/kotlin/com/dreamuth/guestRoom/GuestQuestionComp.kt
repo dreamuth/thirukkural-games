@@ -49,7 +49,7 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                 }
                 styledDiv {
                     css {
-                        classes = mutableListOf("col-6 pr-0")
+                        classes = mutableListOf("col-9 pr-0")
                     }
                     styledDiv {
                         css {
@@ -66,11 +66,15 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                 }
                 styledDiv {
                     css {
-                        classes = mutableListOf("col-6 pl-0")
+                        classes = mutableListOf("col-3 pl-0")
                     }
                     styledDiv {
                         css {
-                            val style = if (props.timerState.isLive && props.timerState.time == 0L) "danger" else "success"
+                            val style = when {
+                                props.timerState.isLive && props.timerState.time == 0L -> "danger"
+                                props.timerState.isPaused -> "secondary"
+                                else -> "success"
+                            }
                             classes = mutableListOf("card bg-$style text-white m-2 text-center")
                         }
                         styledDiv {
@@ -79,9 +83,8 @@ class GuestQuestionComp : RComponent<GuestQuestionProps, RState>() {
                                 fontSize = 1.5.rem
                             }
                             when {
-                                props.timerState.isLive && props.timerState.isPaused -> +"நேரம்: இடைநிறுத்தப்பட்டது"
-                                props.timerState.isLive -> +"நேரம்: ${props.timerState.time / 60 % 60} : ${props.timerState.time % 60}"
-                                else -> +"நேரம்: தொடங்கவில்லை"
+                                props.timerState.isLive -> +"${props.timerState.time / 60 % 60} : ${props.timerState.time % 60}"
+                                else -> +"நேரம்"
                             }
                         }
                     }

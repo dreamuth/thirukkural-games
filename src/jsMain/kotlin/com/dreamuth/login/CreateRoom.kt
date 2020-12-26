@@ -137,7 +137,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                 attrs {
                     onChangeFunction = {
                         val target = it.target as HTMLSelectElement
-                        school = School.getSchool(target.value)
+                        school = School.getSchoolForTamil(target.value)
                     }
                 }
             }

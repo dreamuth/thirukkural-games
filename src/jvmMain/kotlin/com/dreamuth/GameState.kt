@@ -16,9 +16,14 @@
 
 package com.dreamuth
 
+import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
+import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.json.jackson2.JacksonFactory
+import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.ValueRange
@@ -27,11 +32,10 @@ import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient
 import com.google.cloud.secretmanager.v1.SecretVersionName
 import io.ktor.http.cio.websocket.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
+import java.io.File
 import java.io.UnsupportedEncodingException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -58,6 +62,73 @@ class GameState(private val logger: Logger) {
     private val allUserSessions = Collections.synchronizedSet(LinkedHashSet<UserSession>())
     private val users = ConcurrentHashMap<UserSession, UserInfo>()
     private val rooms = ConcurrentHashMap<String, QuestionState>()
+    private val emailSecret: String
+    private val serviceAccount: String
+    private val service: Sheets
+    private val spreadsheetId = "1otzHv-6VKUAQuROts9cBjrbVanPaIpZrN-tN60ajgqE"
+    private val scoreRange = "Score!A3"
+    private val studentsRange = "Students!A2:C1000"
+    private val students = mutableListOf<StudentInfo>()
+
+    init {
+        val useLocalSecrets = System.getenv("use-local-secrets")?.toBoolean() ?: false
+        if (useLocalSecrets) {
+            println("Using local secrets")
+            emailSecret = "invalid"
+            val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
+            val jacksonFactory = JacksonFactory.getDefaultInstance()
+
+            serviceAccount = File("C:/Users/uishta01/credentials.json").readText()
+            val clientSecrets = GoogleClientSecrets.load(jacksonFactory, serviceAccount.reader())
+            val flow = GoogleAuthorizationCodeFlow.Builder(httpTransport, jacksonFactory, clientSecrets, listOf(SheetsScopes.SPREADSHEETS))
+                .setDataStoreFactory(FileDataStoreFactory(File("C:/Users/uishta01/token")))
+                .setAccessType("offline")
+                .build()
+            val receiver = LocalServerReceiver.Builder().setPort(8888).build()
+            val credential = AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
+
+            service = Sheets.Builder(httpTransport, jacksonFactory, credential)
+                .setApplicationName(projectName)
+                .build()
+            val result = service.spreadsheets().values().get(spreadsheetId, studentsRange).execute()
+            result.getValues().forEach { row ->
+                students.add(
+                    StudentInfo(
+                        School.getSchoolForEnglish(row[0] as String),
+                        Group.getGroupForEnglish(row[1] as String),
+                        row[2] as String))
+            }
+        } else {
+            println("Using google secrets")
+            SecretManagerServiceClient.create().use {
+                val emailSecretName = SecretVersionName.of(projectName, "email-password", "3")
+                val emailResponse = it.accessSecretVersion(emailSecretName)
+                emailSecret = emailResponse.payload.data.toStringUtf8()
+
+                val sheetsSecretName = SecretVersionName.of(projectName, "service-account-json", "1")
+                val sheetsResponse = it.accessSecretVersion(sheetsSecretName)
+                serviceAccount = sheetsResponse.payload.data.toStringUtf8()
+            }
+            val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
+            val jacksonFactory = JacksonFactory.getDefaultInstance()
+
+            val serviceAccountCredentials = ServiceAccountCredentials.fromStream(serviceAccount.byteInputStream())
+            val googleCredentials = serviceAccountCredentials.createScoped(SheetsScopes.SPREADSHEETS)
+            val requestInitializer: HttpRequestInitializer = HttpCredentialsAdapter(googleCredentials)
+
+            service = Sheets.Builder(httpTransport, jacksonFactory, requestInitializer)
+                .setApplicationName(projectName)
+                .build()
+            val result = service.spreadsheets().values().get(spreadsheetId, studentsRange).execute()
+            result.getValues().forEach { row ->
+                students.add(
+                    StudentInfo(
+                        School.getSchoolForEnglish(row[0] as String),
+                        Group.getGroupForEnglish(row[1] as String),
+                        row[2] as String))
+            }
+        }
+    }
 
     suspend fun userJoin(userSession: UserSession) {
         allUserSessions.add(userSession)
@@ -68,6 +139,8 @@ class GameState(private val logger: Logger) {
     private suspend fun sendActiveRoomsToUser(userSession: UserSession) {
         val data = Json.encodeToString(RoomNamesData(rooms.keys.filterNotNull().sorted().toList()))
         userSession.send(ClientCommand.ACTIVE_ROOMS.name + data)
+        val activeStudents = ClientCommand.ACTIVE_STUDENTS.name + Json.encodeToString(AllStudents(students))
+        userSession.send(activeStudents)
     }
 
     suspend fun sendActiveUsersToAdmins(userInfo: UserInfo) {
@@ -102,37 +175,14 @@ class GameState(private val logger: Logger) {
                     questionState.timerState = TimerState()
                     logger.info(userInfo, "room removed")
                     sendActiveRoomsToAllUsers()
-                    GlobalScope.launch {
-                        SecretManagerServiceClient.create().use {
-                            val emailSecretName = SecretVersionName.of(projectName, "email-password", "3")
-                            val emailResponse = it.accessSecretVersion(emailSecretName)
-                            val emailSecret = emailResponse.payload.data.toStringUtf8()
-                            sendReport(userInfo, questionState, emailSecret)
-
-                            val sheetsSecretName = SecretVersionName.of(projectName, "service-account-json", "1")
-                            val sheetsResponse = it.accessSecretVersion(sheetsSecretName)
-                            val serviceAccount = sheetsResponse.payload.data.toStringUtf8()
-                            updateReportSheet(userInfo, questionState, serviceAccount)
-                        }
-                    }
+                    sendEmailReport(userInfo, questionState, emailSecret)
+                    updateSheetsReport(userInfo, questionState)
                 }
             }
         }
     }
 
-    private fun updateReportSheet(userInfo: UserInfo, questionState: QuestionState, serviceAccount: String) {
-        val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
-        val spreadsheetId = "1otzHv-6VKUAQuROts9cBjrbVanPaIpZrN-tN60ajgqE"
-        val range = "Score!A3"
-        val jacksonFactory = JacksonFactory.getDefaultInstance()
-
-        val serviceAccountCredentials = ServiceAccountCredentials.fromStream(serviceAccount.byteInputStream())
-        val googleCredentials = serviceAccountCredentials.createScoped(SheetsScopes.SPREADSHEETS)
-        val requestInitializer: HttpRequestInitializer = HttpCredentialsAdapter(googleCredentials)
-
-        val service = Sheets.Builder(httpTransport, jacksonFactory, requestInitializer)
-            .setApplicationName(projectName)
-            .build()
+    private fun updateSheetsReport(userInfo: UserInfo, questionState: QuestionState) {
         val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"))
         val values = ValueRange().setValues(
             listOf(
@@ -152,13 +202,13 @@ class GameState(private val logger: Logger) {
         )
         service.spreadsheets()
             .values()
-            .append(spreadsheetId, range, values)
+            .append(spreadsheetId, scoreRange, values)
             .setValueInputOption("USER_ENTERED")
             .setInsertDataOption("INSERT_ROWS")
             .execute()
     }
 
-    private fun sendReport(userInfo: UserInfo, questionState: QuestionState, data: String) {
+    private fun sendEmailReport(userInfo: UserInfo, questionState: QuestionState, data: String) {
         val properties = Properties()
         properties.setProperty("mail.smtp.host", "smtp.gmail.com")
         properties.setProperty("mail.smtp.port", "587")

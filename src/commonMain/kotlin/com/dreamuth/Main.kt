@@ -56,8 +56,11 @@ enum class School(val tamilDisplay: String, val englishDisplay: String) {
     WOODLANDS("உட்லேண்ட்ஸ் தமிழ்ப் பள்ளி", "Woodlands");
 
     companion object {
-        fun getSchool(tamilDisplay: String): School {
+        fun getSchoolForTamil(tamilDisplay: String): School {
             return values().first { it.tamilDisplay == tamilDisplay }
+        }
+        fun getSchoolForEnglish(englishDisplay: String): School {
+            return values().first { it.englishDisplay == englishDisplay }
         }
     }
 }
@@ -65,8 +68,20 @@ enum class School(val tamilDisplay: String, val englishDisplay: String) {
 @Serializable
 enum class Group(val englishDisplay: String) {
     TWO("7 to 10"),
-    THREE("Above 10")
+    THREE("Above 10");
+
+    companion object {
+        fun getGroupForEnglish(englishDisplay: String): Group {
+            return values().first { it.englishDisplay == englishDisplay }
+        }
+    }
 }
+
+@Serializable
+data class StudentInfo(val school: School, val group: Group, val name: String)
+
+@Serializable
+data class AllStudents(val students: List<StudentInfo> = listOf())
 
 @Serializable
 enum class Topic(val tamilDisplay: String) {
@@ -145,6 +160,7 @@ enum class ClientCommand {
     ERROR_CLOSE_BROWSER,
     SIGN_OUT,
     ACTIVE_ROOMS,
+    ACTIVE_STUDENTS,
     ADMIN_QUESTION,
     GUEST_QUESTION,
     TIME_UPDATE,

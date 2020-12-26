@@ -91,6 +91,7 @@ kotlin {
 
                 // Sheets report
                 implementation("com.google.auth:google-auth-library-oauth2-http:0.22.2")
+                implementation("com.google.oauth-client:google-oauth-client-jetty:1.30.1")
                 implementation("com.google.apis:google-api-services-sheets:v4-rev581-1.25.0")
             }
         }

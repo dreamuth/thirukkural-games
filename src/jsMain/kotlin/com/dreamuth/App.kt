@@ -52,6 +52,7 @@ external interface AppState: RState {
     var isLoaded: Boolean
     var gameState: GameState
     var previousGameState: GameState?
+    var activeUsers: ActiveUsers
     var timerState: TimerState
     var topicState: TopicState
     var adminQuestion: AdminQuestion
@@ -71,6 +72,7 @@ class App : RComponent<RProps, AppState> () {
         scope.launch {
             setState {
                 gameState = GameState.NONE
+                activeUsers = ActiveUsers()
                 topicState = TopicState()
                 timerState = TimerState()
                 adminQuestion = AdminQuestion()
@@ -122,6 +124,15 @@ class App : RComponent<RProps, AppState> () {
                     message.startsWith(ClientCommand.GUEST_JOINED_ROOM.name) -> {
                         setState {
                             gameState = GameState.GUEST_ROOM
+                            createRoomErrorMsg = null
+                            joinRoomErrorMsg = null
+                        }
+                    }
+                    message.startsWith(ClientCommand.ACTIVE_USERS.name) -> {
+                        val data = message.removePrefix(ClientCommand.ACTIVE_USERS.name)
+                        val receivedActiveUsers = Json.decodeFromString<ActiveUsers>(data)
+                        setState {
+                            activeUsers = receivedActiveUsers
                         }
                     }
                     message.startsWith(ClientCommand.ADMIN_QUESTION.name) -> {
@@ -165,18 +176,13 @@ class App : RComponent<RProps, AppState> () {
                     message.startsWith(ClientCommand.SIGN_OUT.name) -> {
                         setState {
                             gameState = GameState.NONE
+                            activeUsers = ActiveUsers()
                             topicState = TopicState()
                             timerState = TimerState()
                             adminQuestion = AdminQuestion()
                             guestQuestion = GuestQuestion()
                             studentScore= StudentScore()
                             isAdminRoom = false
-                        }
-                    }
-                    message.startsWith(ClientCommand.GUEST_JOINED_ROOM.name) -> {
-                        setState {
-                            createRoomErrorMsg = null
-                            joinRoomErrorMsg = null
                         }
                     }
                     message.startsWith(ClientCommand.ERROR_ROOM_EXISTS.name) -> {
@@ -241,6 +247,7 @@ class App : RComponent<RProps, AppState> () {
                         studentScore = state.studentScore
                         adminPasscode = state.adminPasscode
                         guestPasscode = state.guestPasscode
+                        activeUsers = state.activeUsers
                         createRoomErrorMsg = state.createRoomErrorMsg
                         joinRoomErrorMsg = state.joinRoomErrorMsg
                         onNoClickHandler = {

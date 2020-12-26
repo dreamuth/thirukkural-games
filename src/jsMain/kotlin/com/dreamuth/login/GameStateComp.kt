@@ -16,6 +16,7 @@
 
 package com.dreamuth.login
 
+import com.dreamuth.ActiveUsers
 import com.dreamuth.AdminQuestion
 import com.dreamuth.GameState
 import com.dreamuth.GuestQuestion
@@ -44,6 +45,7 @@ external interface GameStateCompProps: RProps {
     var studentScore: StudentScore
     var adminPasscode: String?
     var guestPasscode: String?
+    var activeUsers: ActiveUsers
     var createRoomErrorMsg: String?
     var joinRoomErrorMsg: String?
     var onNoClickHandler: () -> Unit
@@ -84,6 +86,7 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                             roomName = props.roomName!!
                             adminPasscode = props.adminPasscode!!
                             guestPasscode = props.guestPasscode!!
+                            activeUsers = props.activeUsers
                         }
                     }
                     scoreInfo {

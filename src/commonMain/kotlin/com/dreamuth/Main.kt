@@ -117,6 +117,9 @@ data class StudentScore(var score: Map<Topic, Int> = Topic.values().map { it to 
 @Serializable
 data class RoomNamesData(val roomNames: List<String>)
 
+@Serializable
+data class ActiveUsers(val admins: Int = 0, val guests: Int = 0)
+
 enum class ServerCommand {
     CREATE_ROOM,
     ADMIN_JOIN_ROOM,
@@ -146,7 +149,8 @@ enum class ClientCommand {
     GUEST_QUESTION,
     TIME_UPDATE,
     TOPIC_STATE,
-    SCORE_UPDATE;
+    SCORE_UPDATE,
+    ACTIVE_USERS;
 }
 
 suspend fun WebSocketSession.trySend(message: String) {
@@ -165,5 +169,3 @@ suspend fun WebSocketSession.trySend(message: String) {
 suspend fun WebSocketSession.trySend(command: ClientCommand) {
     trySend(command.name)
 }
-
-

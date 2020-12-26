@@ -16,6 +16,9 @@
 
 package com.dreamuth.adminRoom
 
+import com.dreamuth.ActiveUsers
+import kotlinx.css.fontSize
+import kotlinx.css.pct
 import kotlinx.html.DIV
 import react.RBuilder
 import react.RComponent
@@ -26,11 +29,13 @@ import styled.StyledDOMBuilder
 import styled.css
 import styled.styledDiv
 import styled.styledP
+import styled.styledSpan
 
 external interface RoomInfoProps: RProps {
     var roomName: String
     var adminPasscode: String
     var guestPasscode: String
+    var activeUsers: ActiveUsers
 }
 
 class RoomInfo : RComponent<RoomInfoProps, RState>() {
@@ -49,22 +54,36 @@ class RoomInfo : RComponent<RoomInfoProps, RState>() {
                 css {
                     classes = mutableListOf("card-body p-2")
                 }
-                keyValue("Admin passcode", props.adminPasscode)
-                keyValue("Guest passcode", props.guestPasscode)
+                keyValue("Admin passcode", props.adminPasscode, props.activeUsers.admins)
+                keyValue("Guest passcode", props.guestPasscode, props.activeUsers.guests)
             }
         }
     }
 
-    private fun StyledDOMBuilder<DIV>.keyValue(key: String, value: String) {
+    private fun StyledDOMBuilder<DIV>.keyValue(key: String, value: String, users: Int? = null) {
         styledDiv {
             css {
-                classes = mutableListOf("d-flex justify-content-between align-items-center")
+                classes = mutableListOf("d-flex justify-content-between align-items-center mt-1 mb-1")
             }
-            styledP {
+            styledDiv {
                 css {
-                    classes = mutableListOf("card-text mb-0")
+                    classes = mutableListOf("row m-0")
                 }
-                +"$key: "
+                users?.let {
+                    styledSpan {
+                        css {
+                            classes = mutableListOf("badge badge-secondary mr-2")
+                            fontSize = 100.pct
+                        }
+                        +"$users"
+                    }
+                }
+                styledP {
+                    css {
+                        classes = mutableListOf("card-text mb-0")
+                    }
+                    +"$key: "
+                }
             }
             styledP {
                 css {

@@ -70,6 +70,13 @@ class GameState(private val logger: Logger) {
         userSession.send(ClientCommand.ACTIVE_ROOMS.name + data)
     }
 
+    suspend fun sendActiveUsersToAdmins(userInfo: UserInfo) {
+        val activeUsersForRoom = getActiveUsersForRoom(userInfo.roomName)
+        logger.info(userInfo, "Sending active users to admins")
+        val activeUsers = ClientCommand.ACTIVE_USERS.name + Json.encodeToString(activeUsersForRoom)
+        getAdminSessionsForRoom(userInfo.roomName).forEach { it.trySend(activeUsers) }
+    }
+
     suspend fun userLeft(userSession: UserSession) {
         allUserSessions -= userSession
         removeUser(userSession, "browser close")
@@ -83,6 +90,7 @@ class GameState(private val logger: Logger) {
         val userInfo = users.remove(userSession)
         userInfo?.let {
             logger.info("Removing ${userSession.name} on $reason.")
+            sendActiveUsersToAdmins(userInfo)
             if (users.values.none { it.roomName == userInfo.roomName && it.adminPasscode != null }) {
                 val guests = users.entries.filter { it.value.roomName == userInfo.roomName }.map { it.key }
                 guests.forEach {
@@ -254,6 +262,10 @@ class GameState(private val logger: Logger) {
 
     fun getQuestionState(roomName: String): QuestionState? {
         return rooms[roomName]
+    }
+
+    private fun getActiveUsersForRoom(roomName: String): ActiveUsers {
+        return ActiveUsers(getAdminSessionsForRoom(roomName).size, getGuestSessionsForRoom(roomName).size)
     }
 
     fun getAdminSessionsForRoom(roomName: String): List<WebSocketSession> {

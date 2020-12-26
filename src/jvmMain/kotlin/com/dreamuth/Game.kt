@@ -55,6 +55,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                             val response = AdminRoomResponse(activeUserInfo.roomName, activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
                             userSession.send(ClientCommand.ADMIN_CREATED_ROOM.name + Json.encodeToString(response))
                             logger.info(activeUserInfo, "Created room $response")
+                            gameState.sendActiveUsersToAdmins(userInfo)
                         } else {
                             logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room ${room.name}")
                             userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
@@ -91,6 +92,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                         if (questionState.timerState.isLive) {
                             sendAdminQuestionToMe(questionState, userInfo)
                         }
+                        gameState.sendActiveUsersToAdmins(userInfo)
                     }
                 }
             }
@@ -119,6 +121,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                         if (questionState.timerState.isLive) {
                             sendGuestQuestionToMe(questionState, userInfo)
                         }
+                        gameState.sendActiveUsersToAdmins(userInfo)
                     }
                 }
             }

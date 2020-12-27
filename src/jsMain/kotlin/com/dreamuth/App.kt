@@ -31,7 +31,6 @@ import react.RBuilder
 import react.RComponent
 import react.RProps
 import react.RState
-import react.dom.pre
 import react.setState
 import styled.css
 import styled.styledDiv
@@ -52,6 +51,7 @@ external interface AppState: RState {
     var isLoaded: Boolean
     var gameState: GameState
     var previousGameState: GameState?
+    var activeStudents: ActiveStudents
     var activeUsers: ActiveUsers
     var timerState: TimerState
     var topicState: TopicState
@@ -73,6 +73,7 @@ class App : RComponent<RProps, AppState> () {
             setState {
                 gameState = GameState.NONE
                 activeUsers = ActiveUsers()
+                activeStudents = ActiveStudents()
                 topicState = TopicState()
                 timerState = TimerState()
                 adminQuestion = AdminQuestion()
@@ -93,6 +94,13 @@ class App : RComponent<RProps, AppState> () {
                             roomNames = roomNamesData.roomNames
                             roomName = if (roomNamesData.roomNames.contains(roomName)) roomName
                             else roomNamesData.roomNames.firstOrNull()
+                        }
+                    }
+                    message.startsWith(ClientCommand.ACTIVE_STUDENTS.name) -> {
+                        val data = message.removePrefix(ClientCommand.ACTIVE_STUDENTS.name)
+                        val receivedActiveStudents = Json.decodeFromString<ActiveStudents>(data)
+                        setState {
+                            activeStudents = receivedActiveStudents
                         }
                     }
                     message.startsWith(ClientCommand.ADMIN_CREATED_ROOM.name) -> {
@@ -175,6 +183,7 @@ class App : RComponent<RProps, AppState> () {
                     }
                     message.startsWith(ClientCommand.SIGN_OUT.name) -> {
                         setState {
+                            // Don't remove the active rooms or students
                             gameState = GameState.NONE
                             activeUsers = ActiveUsers()
                             topicState = TopicState()
@@ -240,6 +249,7 @@ class App : RComponent<RProps, AppState> () {
                         gameState = state.gameState
                         roomName = state.roomName
                         roomNames = state.roomNames
+                        activeStudents = state.activeStudents
                         adminQuestion = state.adminQuestion
                         guestQuestion = state.guestQuestion
                         timerState = state.timerState

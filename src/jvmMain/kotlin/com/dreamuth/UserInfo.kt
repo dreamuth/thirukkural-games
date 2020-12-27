@@ -50,8 +50,7 @@ data class UserInfo(
     val adminPasscode: String? = null)
 
 data class QuestionState(
-    val school: School,
-    val group: Group,
+    val room: Room,
     var topicState: TopicState,
     var thirukkurals: List<Thirukkural>,
     var timerState: TimerState,
@@ -169,8 +168,8 @@ fun fetchSource(group: Group): List<Thirukkural> {
     val thirukkurals = readSource(sourceData)
     println("version: 2020-12-19.1")
     return when (group) {
-        Group.TWO -> thirukkurals.take(100)
-        Group.THREE -> thirukkurals.takeLast(150)
+        Group.II -> thirukkurals.take(100)
+        Group.III -> thirukkurals.takeLast(150)
     }
 }
 

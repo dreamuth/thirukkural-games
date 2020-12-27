@@ -21,7 +21,7 @@ import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Room(val name: String, val school: School = School.PEARLAND, val group: Group = Group.TWO)
+data class Room(val name: String, val school: School = School.PEARLAND, val group: Group = Group.II)
 
 @Serializable
 data class AdminRoomResponse(var roomName: String, val adminPasscode: String, val guestPasscode: String)
@@ -50,9 +50,9 @@ data class KuralOnly(val firstLine: String, val secondLine: String)
 enum class School(val tamilDisplay: String, val englishDisplay: String) {
     PEARLAND("பியர்லேண்ட் தமிழ்ப் பள்ளி", "Pearland + Clearlake"),
     KATY("கேட்டி தமிழ்ப் பள்ளி", "Katy"),
-    SUGARLAND("சுகர்லேண்ட் தமிழ்ப் பள்ளி", "West Katy"),
-    WEST_KATY("மேற்கு கேட்டி தமிழ்ப் பள்ளி", "West Houston"),
-    WEST_HOUSTON("மேற்கு ஹூஸ்டன் தமிழ்ப் பள்ளி", "Sugar Land"),
+    SUGARLAND("சுகர்லேண்ட் தமிழ்ப் பள்ளி", "Sugar Land"),
+    WEST_KATY("மேற்கு கேட்டி தமிழ்ப் பள்ளி", "West Katy"),
+    WEST_HOUSTON("மேற்கு ஹூஸ்டன் தமிழ்ப் பள்ளி", "West Houston"),
     WOODLANDS("உட்லேண்ட்ஸ் தமிழ்ப் பள்ளி", "Woodlands");
 
     companion object {
@@ -67,8 +67,8 @@ enum class School(val tamilDisplay: String, val englishDisplay: String) {
 
 @Serializable
 enum class Group(val englishDisplay: String) {
-    TWO("7 to 10"),
-    THREE("Above 10");
+    II("7 to 10"),
+    III("Above 10");
 
     companion object {
         fun getGroupForEnglish(englishDisplay: String): Group {
@@ -81,7 +81,7 @@ enum class Group(val englishDisplay: String) {
 data class StudentInfo(val school: School, val group: Group, val name: String)
 
 @Serializable
-data class AllStudents(val students: List<StudentInfo> = listOf())
+data class ActiveStudents(val students: Set<StudentInfo> = setOf())
 
 @Serializable
 enum class Topic(val tamilDisplay: String) {

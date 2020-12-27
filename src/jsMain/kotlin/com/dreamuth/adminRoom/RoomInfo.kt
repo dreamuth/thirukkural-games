@@ -48,7 +48,7 @@ class RoomInfo : RComponent<RoomInfoProps, RState>() {
                 css {
                     classes = mutableListOf("card-header p-2")
                 }
-                keyValue("Room name", props.roomName)
+                +props.roomName
             }
             styledDiv {
                 css {

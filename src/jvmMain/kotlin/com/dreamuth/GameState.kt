@@ -32,6 +32,8 @@ import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient
 import com.google.cloud.secretmanager.v1.SecretVersionName
 import io.ktor.http.cio.websocket.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
@@ -68,7 +70,7 @@ class GameState(private val logger: Logger) {
     private val spreadsheetId = "1otzHv-6VKUAQuROts9cBjrbVanPaIpZrN-tN60ajgqE"
     private val scoreRange = "Score!A3"
     private val studentsRange = "Students!A2:C1000"
-    private val students = mutableListOf<StudentInfo>()
+    private val students = Collections.synchronizedSet(LinkedHashSet<StudentInfo>())
 
     init {
         val useLocalSecrets = System.getenv("use-local-secrets")?.toBoolean() ?: false
@@ -90,13 +92,22 @@ class GameState(private val logger: Logger) {
             service = Sheets.Builder(httpTransport, jacksonFactory, credential)
                 .setApplicationName(projectName)
                 .build()
+
             val result = service.spreadsheets().values().get(spreadsheetId, studentsRange).execute()
             result.getValues().forEach { row ->
+                var studentName = row[2] as String
+                var tempStudentName = studentName
+                var index = 0
+                while (students.map { it.name }.contains(tempStudentName)) {
+                    tempStudentName = "$studentName-${++index}"
+                }
+                studentName = tempStudentName
                 students.add(
                     StudentInfo(
                         School.getSchoolForEnglish(row[0] as String),
                         Group.getGroupForEnglish(row[1] as String),
-                        row[2] as String))
+                        studentName
+                    ))
             }
         } else {
             println("Using google secrets")
@@ -130,17 +141,34 @@ class GameState(private val logger: Logger) {
         }
     }
 
+    private fun refreshAndSendActiveStudentsToMe(userSession: UserSession) {
+        val result = service.spreadsheets().values().get(spreadsheetId, studentsRange).execute()
+        val newStudents = mutableSetOf<StudentInfo>()
+        result.getValues().forEach { row ->
+            newStudents.add(
+                StudentInfo(
+                    School.getSchoolForEnglish(row[0] as String),
+                    Group.getGroupForEnglish(row[1] as String),
+                    row[2] as String))
+        }
+        students.clear()
+        students.addAll(newStudents)
+        GlobalScope.launch {
+            val activeStudents = ClientCommand.ACTIVE_STUDENTS.name + Json.encodeToString(ActiveStudents(students))
+            userSession.send(activeStudents)
+        }
+    }
+
     suspend fun userJoin(userSession: UserSession) {
         allUserSessions.add(userSession)
         userSession.send("Welcome ${userSession.name}")
         sendActiveRoomsToUser(userSession)
+        refreshAndSendActiveStudentsToMe(userSession)
     }
 
     private suspend fun sendActiveRoomsToUser(userSession: UserSession) {
         val data = Json.encodeToString(RoomNamesData(rooms.keys.filterNotNull().sorted().toList()))
         userSession.send(ClientCommand.ACTIVE_ROOMS.name + data)
-        val activeStudents = ClientCommand.ACTIVE_STUDENTS.name + Json.encodeToString(AllStudents(students))
-        userSession.send(activeStudents)
     }
 
     suspend fun sendActiveUsersToAdmins(userInfo: UserInfo) {
@@ -175,22 +203,24 @@ class GameState(private val logger: Logger) {
                     questionState.timerState = TimerState()
                     logger.info(userInfo, "room removed")
                     sendActiveRoomsToAllUsers()
-                    sendEmailReport(userInfo, questionState, emailSecret)
-                    updateSheetsReport(userInfo, questionState)
+                    GlobalScope.launch {
+                        sendEmailReport(userInfo, questionState, emailSecret)
+                        updateSheetsReport(questionState)
+                    }
                 }
             }
         }
     }
 
-    private fun updateSheetsReport(userInfo: UserInfo, questionState: QuestionState) {
+    private fun updateSheetsReport(questionState: QuestionState) {
         val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"))
         val values = ValueRange().setValues(
             listOf(
                 listOf<Any>(
                     timeNow,
-                    questionState.school.englishDisplay,
-                    questionState.group.englishDisplay,
-                    userInfo.roomName,
+                    questionState.room.school.englishDisplay,
+                    questionState.room.group.englishDisplay,
+                    questionState.room.name,
                     questionState.scoreState.score[Topic.Athikaram]!!.count(),
                     questionState.scoreState.score[Topic.KuralPorul]!!.count(),
                     questionState.scoreState.score[Topic.Kural]!!.count(),
@@ -226,9 +256,9 @@ class GameState(private val logger: Logger) {
             msg.addRecipient(Message.RecipientType.TO, InternetAddress("dreamuth@gmail.com"))
             msg.setSubject("HTS Kids Thirukkural Games 2021 : [${userInfo.roomName}] score", "UTF-8")
             val text = """
-                School: ${questionState.school.englishDisplay}
-                Age Group: ${questionState.group.englishDisplay}
-                Student: ${userInfo.roomName}
+                School: ${questionState.room.school.englishDisplay}
+                Age Group: ${questionState.room.group.englishDisplay}
+                Student: ${questionState.room.name}
                 
                 ${Topic.Athikaram.tamilDisplay} : ${questionState.scoreState.score[Topic.Athikaram]?.count()}
                 ${Topic.KuralPorul.tamilDisplay} : ${questionState.scoreState.score[Topic.KuralPorul]?.count()}

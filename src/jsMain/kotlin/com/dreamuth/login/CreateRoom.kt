@@ -20,6 +20,7 @@ import com.dreamuth.Group
 import com.dreamuth.Room
 import com.dreamuth.School
 import com.dreamuth.ServerCommand
+import com.dreamuth.StudentInfo
 import com.dreamuth.components.linkItem
 import com.dreamuth.scope
 import com.dreamuth.wsClient
@@ -32,7 +33,6 @@ import kotlinx.html.js.onSubmitFunction
 import kotlinx.html.role
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import react.RBuilder
 import react.RProps
@@ -43,6 +43,7 @@ import react.useState
 import styled.css
 import styled.styledButton
 import styled.styledDiv
+import styled.styledFieldSet
 import styled.styledForm
 import styled.styledInput
 import styled.styledLabel
@@ -51,14 +52,16 @@ import styled.styledSmall
 import styled.styledUl
 
 external interface CreateRoomProps: RProps {
+    var activeStudents: List<StudentInfo>
     var errorMsg: String?
 }
 
 private var createRoom = functionalComponent<CreateRoomProps> { props ->
-    var roomName by useState("")
-    var group by useState(Group.TWO)
     var school by useState(School.PEARLAND)
+    var group by useState(Group.II)
+    var studentName:String? by useState(null)
 
+    val filteredStudents = props.activeStudents.filter { it.school == school && it.group == group }
     styledForm {
         css {
             attrs {
@@ -66,11 +69,14 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
             }
         }
         attrs {
-            onSubmitFunction = {
-                it.preventDefault()
-                scope.launch {
-                    val data = Json.encodeToString(Room(roomName.trim(), school, group))
-                    wsClient.trySend(ServerCommand.CREATE_ROOM.name + data)
+            onSubmitFunction = { event ->
+                event.preventDefault()
+                val selectedName = studentName ?: filteredStudents.firstOrNull()?.name
+                selectedName?.let { validName ->
+                    scope.launch {
+                        val data = Json.encodeToString(Room(validName, school, group))
+                        wsClient.trySend(ServerCommand.CREATE_ROOM.name + data)
+                    }
                 }
             }
         }
@@ -87,128 +93,163 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
         }
         styledDiv {
             css {
-                classes = mutableListOf("form-group")
+                classes = mutableListOf("form-group row")
             }
             styledLabel {
+                css {
+                    classes = mutableListOf("col-sm-4 col-form-label")
+                }
                 +"Admin password"
             }
-            styledInput {
+            styledDiv {
                 css {
-                    classes = mutableListOf("form-control")
-                    attrs {
-                        type = InputType.text
-                        name = "adminPassword"
-                        value = "HTS-Kids-2021"
-                        readonly = true
-//                        required = true
-                    }
+                    classes = mutableListOf("col-sm-8")
                 }
+                styledInput {
+                    css {
+                        classes = mutableListOf("form-control")
+                        attrs {
+                            type = InputType.text
+                            name = "adminPassword"
+                            value = "HTS-Kids-2021"
+                            readonly = true
+//                        required = true
+                        }
+                    }
 //                attrs {
 //                    onChangeFunction = {
 //                        val target = it.target as HTMLInputElement
 //                        roomName = target.value
 //                    }
 //                }
-            }
-            styledSmall {
-                css {
-                    classes = mutableListOf("form-text text-muted")
                 }
-                +"Password is hardcoded for demo purpose, before game it will be removed"
+                styledSmall {
+                    css {
+                        classes = mutableListOf("form-text text-muted")
+                    }
+                    +"Password is hardcoded for demo purpose, before game it will be removed"
+                }
             }
         }
         styledDiv {
             css {
-                classes = mutableListOf("form-group")
+                classes = mutableListOf("form-group row")
             }
             styledLabel {
+                css {
+                    classes = mutableListOf("col-sm-4 col-form-label")
+                }
                 +"School"
             }
-            styledSelect {
+            styledDiv {
                 css {
-                    classes = mutableListOf("form-control custom-select")
+                    classes = mutableListOf("col-sm-8")
+                }
+                styledSelect {
+                    css {
+                        classes = mutableListOf("form-control custom-select")
+                        attrs {
+                            id = "selectSchool1"
+                        }
+                    }
+                    School.values().forEach { school ->
+                        option { +school.englishDisplay }
+                    }
                     attrs {
-                        id = "selectSchool1"
-                    }
-                }
-                School.values().forEach { school ->
-                    option { +school.tamilDisplay }
-                }
-                attrs {
-                    onChangeFunction = {
-                        val target = it.target as HTMLSelectElement
-                        school = School.getSchoolForTamil(target.value)
-                    }
-                }
-            }
-        }
-
-        styledDiv {
-            css {
-                classes = mutableListOf("form-group")
-            }
-            styledUl {
-                css {
-                    classes = mutableListOf("nav bg-light nav-pills rounded-pill nav-fill mb-3")
-                    attrs {
-                        role = "tablist"
-                    }
-                }
-                linkItem {
-                    name = "Group II"
-                    isActive = group == Group.TWO
-                    onClickFunction = {
-                        group = Group.TWO
-                    }
-                }
-                linkItem {
-                    name = "Group III"
-                    isActive = group == Group.THREE
-                    onClickFunction = {
-                        group = Group.THREE
+                        onChangeFunction = { event ->
+                            val target = event.target as HTMLSelectElement
+                            school = School.getSchoolForEnglish(target.value)
+                        }
                     }
                 }
             }
         }
         styledDiv {
             css {
-                classes = mutableListOf("form-group")
+                classes = mutableListOf("form-group row")
             }
             styledLabel {
-                +"Room name"
-            }
-            styledInput {
                 css {
-                    classes = mutableListOf("form-control")
-                    attrs {
-                        type = InputType.text
-                        name = "roomName"
-                        required = true
-                        pattern = "^[a-zA-Z0-9 ]+$"
+                    classes = mutableListOf("col-sm-4 col-form-label")
+                }
+                +"Age group"
+            }
+            styledDiv {
+                css {
+                    classes = mutableListOf("col-sm-8")
+                }
+                styledUl {
+                    css {
+                        classes = mutableListOf("nav bg-light nav-pills rounded-pill nav-fill mb-3")
+                        attrs {
+                            role = "tablist"
+                        }
+                    }
+                    linkItem {
+                        name = Group.II.englishDisplay
+                        isActive = group == Group.II
+                        onClickFunction = {
+                            group = Group.II
+                        }
+                    }
+                    linkItem {
+                        name = Group.III.englishDisplay
+                        isActive = group == Group.III
+                        onClickFunction = {
+                            group = Group.III
+                        }
                     }
                 }
-                attrs {
-                    onChangeFunction = {
-                        val target = it.target as HTMLInputElement
-                        roomName = target.value
-                    }
-                }
-            }
-            styledSmall {
-                css {
-                    classes = mutableListOf("form-text text-muted")
-                }
-                +"Room name can contain letters, numbers and space only"
             }
         }
-        styledButton {
+        styledFieldSet {
             css {
-                classes = mutableListOf("btn btn-primary btn-block rounded-pill")
                 attrs {
-                    type = ButtonType.submit
+                    disabled = filteredStudents.isEmpty()
                 }
             }
-            +"Create"
+            styledDiv {
+                css {
+                    classes = mutableListOf("form-group row")
+                }
+                styledLabel {
+                    css {
+                        classes = mutableListOf("col-sm-4")
+                    }
+                    +"Student"
+                }
+                styledDiv {
+                    css {
+                        classes = mutableListOf("col-sm-8")
+                    }
+                    styledSelect {
+                        css {
+                            classes = mutableListOf("form-control custom-select")
+                            attrs {
+                                id = "selectStudentName"
+                            }
+                        }
+                        filteredStudents.forEach { student ->
+                            option { +student.name }
+                        }
+                        attrs {
+                            onChangeFunction = {
+                                val target = it.target as HTMLSelectElement
+                                studentName = target.value
+                            }
+                        }
+                    }
+                }
+            }
+            styledButton {
+                css {
+                    classes = mutableListOf("btn btn-primary btn-block rounded-pill")
+                    attrs {
+                        type = ButtonType.submit
+                    }
+                }
+                +"Create"
+            }
         }
     }
 }

@@ -42,14 +42,15 @@ class Game(private val gameState: GameState, private val logger: Logger) {
             command.startsWith(ServerCommand.CREATE_ROOM.name) -> {
                 val data = command.removePrefix(ServerCommand.CREATE_ROOM.name)
                 val room = Json.decodeFromString<Room>(data)
-                if (gameState.isExistingRoom(room.name)) {
-                    logger.warn(userSession, ServerCommand.CREATE_ROOM, "Room ${room.name} already exists")
+                val roomName = "${room.school.name} ${room.group.name} ${room.name}"
+                if (gameState.isExistingRoom(roomName)) {
+                    logger.warn(userSession, ServerCommand.CREATE_ROOM, "Room $roomName already exists")
                     userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
                 } else {
-                    val userInfo = createAdminRoom(userSession, room, gameState)
+                    val userInfo = createAdminRoom(userSession, roomName, gameState)
                     val activeUserInfo = gameState.addUserInfo(userInfo)
                     if (userInfo == activeUserInfo) {
-                        val questionState = createQuestionState(room.school, room.group)
+                        val questionState = createQuestionState(room)
                         val actualQuestionState = gameState.addQuestionState(activeUserInfo.roomName, questionState)
                         if (questionState == actualQuestionState) {
                             val response = AdminRoomResponse(activeUserInfo.roomName, activeUserInfo.adminPasscode!!, activeUserInfo.guestPasscode)
@@ -57,7 +58,7 @@ class Game(private val gameState: GameState, private val logger: Logger) {
                             logger.info(activeUserInfo, "Created room $response")
                             gameState.sendActiveUsersToAdmins(userInfo)
                         } else {
-                            logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room ${room.name}")
+                            logger.warn(userSession, ServerCommand.CREATE_ROOM, "Someone just created the room $roomName")
                             userSession.send(ClientCommand.ERROR_ROOM_EXISTS.name + Json.encodeToString(room))
                         }
                     } else {
@@ -268,19 +269,18 @@ class Game(private val gameState: GameState, private val logger: Logger) {
         }
     }
 
-    private fun createAdminRoom(userSession: UserSession, room: Room, gameState: GameState) = UserInfo(
+    private fun createAdminRoom(userSession: UserSession, roomName: String, gameState: GameState) = UserInfo(
         session = userSession,
-        roomName = room.name,
+        roomName = roomName,
         userType = UserType.ADMIN,
         adminPasscode = gameState.createAdminPasscode(),
         guestPasscode = gameState.createGuestPasscode()
     )
 
-    private fun createQuestionState(school: School, group: Group): QuestionState {
-        val thirukkurals = fetchSource(group)
+    private fun createQuestionState(room: Room): QuestionState {
+        val thirukkurals = fetchSource(room.group)
         return QuestionState(
-            school,
-            group,
+            room,
             TopicState(),
             thirukkurals,
             TimerState(),

@@ -36,6 +36,7 @@ import styled.styledDiv
 import styled.styledP
 
 external interface SignOutConfirmProps: RProps {
+    var isAdmin: Boolean
     var onNoClickHandler: () -> Unit
 }
 
@@ -68,6 +69,14 @@ class SignOutConfirm : RComponent<SignOutConfirmProps, RState>() {
                         styledDiv {
                             css {
                                 classes = mutableListOf("card-body")
+                            }
+                            if (props.isAdmin)  {
+                                styledP {
+                                    css {
+                                        classes = mutableListOf("card-text")
+                                    }
+                                    +"You can't log back to the same session if no other admins are logged into current session."
+                                }
                             }
                             styledP {
                                 css {

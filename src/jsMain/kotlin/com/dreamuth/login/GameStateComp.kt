@@ -106,6 +106,7 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
         }
         GameState.SIGN_OUT_CONFIRM -> {
             signOutConfirm {
+                isAdmin = props.adminPasscode != null
                 onNoClickHandler = props.onNoClickHandler
             }
         }

@@ -106,6 +106,7 @@ kotlin {
                 implementation(npm("react", "17.0.1"))
                 implementation(npm("react-dom", "17.0.1"))
                 implementation(npm("react-is", "17.0.1"))
+                implementation(npm("react-select", "3.1.1"))
                 implementation("org.jetbrains:kotlin-react:17.0.0-pre.132-kotlin-$kotlinVersion")
                 implementation("org.jetbrains:kotlin-react-dom:17.0.0-pre.132-kotlin-$kotlinVersion")
                 implementation("org.jetbrains:kotlin-styled:5.2.0-pre.132-kotlin-$kotlinVersion")

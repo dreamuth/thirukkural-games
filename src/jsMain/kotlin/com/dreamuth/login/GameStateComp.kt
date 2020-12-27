@@ -16,7 +16,7 @@
 
 package com.dreamuth.login
 
-import com.dreamuth.ActiveStudents
+import com.dreamuth.RegisteredStudents
 import com.dreamuth.ActiveUsers
 import com.dreamuth.AdminQuestion
 import com.dreamuth.GameState
@@ -40,7 +40,7 @@ external interface GameStateCompProps: RProps {
     var topicState: TopicState
     var roomNames: List<String>
     var roomName: String?
-    var activeStudents: ActiveStudents
+    var registeredStudents: RegisteredStudents
     var timerState: TimerState
     var adminQuestion: AdminQuestion
     var guestQuestion: GuestQuestion
@@ -58,7 +58,7 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
         GameState.NONE -> {
             gameMode {
                 roomNames = props.roomNames
-                activeStudents = props.activeStudents
+                registeredStudents = props.registeredStudents
                 createRoomErrorMsg = props.createRoomErrorMsg
                 joinRoomErrorMsg = props.joinRoomErrorMsg
             }

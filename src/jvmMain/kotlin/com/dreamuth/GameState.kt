@@ -141,7 +141,7 @@ class GameState(private val logger: Logger) {
         }
     }
 
-    private fun refreshAndSendActiveStudentsToMe(userSession: UserSession) {
+    private fun refreshAndSendRegisteredStudentsToMe(userSession: UserSession) {
         val result = service.spreadsheets().values().get(spreadsheetId, studentsRange).execute()
         val newStudents = mutableSetOf<StudentInfo>()
         result.getValues().forEach { row ->
@@ -154,8 +154,8 @@ class GameState(private val logger: Logger) {
         students.clear()
         students.addAll(newStudents)
         GlobalScope.launch {
-            val activeStudents = ClientCommand.ACTIVE_STUDENTS.name + Json.encodeToString(ActiveStudents(students))
-            userSession.send(activeStudents)
+            val registeredStudents = ClientCommand.REGISTERED_STUDENTS.name + Json.encodeToString(RegisteredStudents(students))
+            userSession.send(registeredStudents)
         }
     }
 
@@ -163,7 +163,7 @@ class GameState(private val logger: Logger) {
         allUserSessions.add(userSession)
         userSession.send("Welcome ${userSession.name}")
         sendActiveRoomsToUser(userSession)
-        refreshAndSendActiveStudentsToMe(userSession)
+        refreshAndSendRegisteredStudentsToMe(userSession)
     }
 
     private suspend fun sendActiveRoomsToUser(userSession: UserSession) {

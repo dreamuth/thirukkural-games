@@ -51,7 +51,7 @@ external interface AppState: RState {
     var isLoaded: Boolean
     var gameState: GameState
     var previousGameState: GameState?
-    var activeStudents: ActiveStudents
+    var registeredStudents: RegisteredStudents
     var activeUsers: ActiveUsers
     var timerState: TimerState
     var topicState: TopicState
@@ -73,7 +73,7 @@ class App : RComponent<RProps, AppState> () {
             setState {
                 gameState = GameState.NONE
                 activeUsers = ActiveUsers()
-                activeStudents = ActiveStudents()
+                registeredStudents = RegisteredStudents()
                 topicState = TopicState()
                 timerState = TimerState()
                 adminQuestion = AdminQuestion()
@@ -96,11 +96,11 @@ class App : RComponent<RProps, AppState> () {
                             else roomNamesData.roomNames.firstOrNull()
                         }
                     }
-                    message.startsWith(ClientCommand.ACTIVE_STUDENTS.name) -> {
-                        val data = message.removePrefix(ClientCommand.ACTIVE_STUDENTS.name)
-                        val receivedActiveStudents = Json.decodeFromString<ActiveStudents>(data)
+                    message.startsWith(ClientCommand.REGISTERED_STUDENTS.name) -> {
+                        val data = message.removePrefix(ClientCommand.REGISTERED_STUDENTS.name)
+                        val receivedRegisteredStudents = Json.decodeFromString<RegisteredStudents>(data)
                         setState {
-                            activeStudents = receivedActiveStudents
+                            registeredStudents = receivedRegisteredStudents
                         }
                     }
                     message.startsWith(ClientCommand.ADMIN_CREATED_ROOM.name) -> {
@@ -249,7 +249,7 @@ class App : RComponent<RProps, AppState> () {
                         gameState = state.gameState
                         roomName = state.roomName
                         roomNames = state.roomNames
-                        activeStudents = state.activeStudents
+                        registeredStudents = state.registeredStudents
                         adminQuestion = state.adminQuestion
                         guestQuestion = state.guestQuestion
                         timerState = state.timerState

@@ -16,7 +16,7 @@
 
 package com.dreamuth.login
 
-import com.dreamuth.ActiveStudents
+import com.dreamuth.RegisteredStudents
 import com.dreamuth.GameState
 import com.dreamuth.components.linkItem
 import kotlinx.html.role
@@ -32,7 +32,7 @@ import styled.styledUl
 
 external interface GameModeProps: RProps {
     var roomNames: List<String>
-    var activeStudents: ActiveStudents
+    var registeredStudents: RegisteredStudents
     var createRoomErrorMsg: String?
     var joinRoomErrorMsg: String?
 }
@@ -92,9 +92,9 @@ private var gameMode = functionalComponent<GameModeProps> { props ->
                         }
                         when (loginState) {
                             GameState.CREATE -> {
-                                if (props.activeStudents.students.isNotEmpty()) {
+                                if (props.registeredStudents.students.isNotEmpty()) {
                                     createRoom {
-                                        activeStudents = props.activeStudents.students.toList()
+                                        registeredStudents = props.registeredStudents.students.toList()
                                         errorMsg = props.createRoomErrorMsg
                                     }
                                 }

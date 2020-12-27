@@ -81,7 +81,7 @@ enum class Group(val englishDisplay: String) {
 data class StudentInfo(val school: School, val group: Group, val name: String)
 
 @Serializable
-data class ActiveStudents(val students: Set<StudentInfo> = setOf())
+data class RegisteredStudents(val students: Set<StudentInfo> = setOf())
 
 @Serializable
 enum class Topic(val tamilDisplay: String) {
@@ -160,7 +160,7 @@ enum class ClientCommand {
     ERROR_CLOSE_BROWSER,
     SIGN_OUT,
     ACTIVE_ROOMS,
-    ACTIVE_STUDENTS,
+    REGISTERED_STUDENTS,
     ADMIN_QUESTION,
     GUEST_QUESTION,
     TIME_UPDATE,

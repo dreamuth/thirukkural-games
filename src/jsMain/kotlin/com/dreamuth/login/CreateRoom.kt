@@ -22,6 +22,8 @@ import com.dreamuth.School
 import com.dreamuth.ServerCommand
 import com.dreamuth.StudentInfo
 import com.dreamuth.components.linkItem
+import com.dreamuth.external.ReactSelectOption
+import com.dreamuth.external.reactSelect
 import com.dreamuth.scope
 import com.dreamuth.wsClient
 import kotlinx.coroutines.launch
@@ -52,7 +54,7 @@ import styled.styledSmall
 import styled.styledUl
 
 external interface CreateRoomProps: RProps {
-    var activeStudents: List<StudentInfo>
+    var registeredStudents: List<StudentInfo>
     var errorMsg: String?
 }
 
@@ -61,7 +63,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
     var group by useState(Group.II)
     var studentName:String? by useState(null)
 
-    val filteredStudents = props.activeStudents.filter { it.school == school && it.group == group }
+    val filteredStudents = props.registeredStudents.filter { it.school == school && it.group == group }
     styledForm {
         css {
             attrs {
@@ -222,20 +224,12 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                     css {
                         classes = mutableListOf("col-sm-8")
                     }
-                    styledSelect {
-                        css {
-                            classes = mutableListOf("form-control custom-select")
-                            attrs {
-                                id = "selectStudentName"
-                            }
-                        }
-                        filteredStudents.forEach { student ->
-                            option { +student.name }
-                        }
+                    reactSelect {
                         attrs {
-                            onChangeFunction = {
-                                val target = it.target as HTMLSelectElement
-                                studentName = target.value
+                            id = "reactSelectStudent"
+                            options = filteredStudents.map { ReactSelectOption(it.name, it.name) }.toTypedArray()
+                            onChange = {
+                                studentName = it.label
                             }
                         }
                     }

@@ -50,7 +50,7 @@ data class UserInfo(
     val adminPasscode: String? = null)
 
 data class QuestionState(
-    val room: Room,
+    val studentInfo: StudentInfo,
     var topicState: TopicState,
     var thirukkurals: List<Thirukkural>,
     var timerState: TimerState,

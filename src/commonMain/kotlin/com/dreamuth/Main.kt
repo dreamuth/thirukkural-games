@@ -21,16 +21,13 @@ import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Room(val name: String, val school: School = School.PEARLAND, val group: Group = Group.II)
+data class AdminRoomResponse(var studentInfo: StudentInfo, val adminPasscode: String, val guestPasscode: String)
 
 @Serializable
-data class AdminRoomResponse(var roomName: String, val adminPasscode: String, val guestPasscode: String)
+data class AdminJoinRoom(val studentInfo: StudentInfo, val passcode: String)
 
 @Serializable
-data class AdminJoinRoom(val roomName: String, val passcode: String)
-
-@Serializable
-data class GuestJoinRoom(val roomName: String, val passcode: String)
+data class GuestJoinRoom(val studentInfo: StudentInfo, val passcode: String)
 
 @Serializable
 data class Thirukkural(
@@ -78,10 +75,14 @@ enum class Group(val englishDisplay: String) {
 }
 
 @Serializable
-data class StudentInfo(val school: School, val group: Group, val name: String)
+data class StudentInfo(val school: School, val group: Group, val name: String) {
+    fun getRoomName(): String {
+        return "${school.name} ${group.name} $name"
+    }
+}
 
 @Serializable
-data class RegisteredStudents(val students: Set<StudentInfo> = setOf())
+data class Students(val students: Set<StudentInfo> = setOf())
 
 @Serializable
 enum class Topic(val tamilDisplay: String) {
@@ -130,9 +131,6 @@ data class TopicState(
 data class StudentScore(var score: Map<Topic, Int> = Topic.values().map { it to 0 }.toMap())
 
 @Serializable
-data class RoomNamesData(val roomNames: List<String>)
-
-@Serializable
 data class ActiveUsers(val admins: Int = 0, val guests: Int = 0)
 
 enum class ServerCommand {
@@ -159,7 +157,7 @@ enum class ClientCommand {
     ERROR_INVALID_PASSCODE,
     ERROR_CLOSE_BROWSER,
     SIGN_OUT,
-    ACTIVE_ROOMS,
+    ACTIVE_STUDENTS,
     REGISTERED_STUDENTS,
     ADMIN_QUESTION,
     GUEST_QUESTION,

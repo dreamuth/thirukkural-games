@@ -17,7 +17,6 @@
 package com.dreamuth.login
 
 import com.dreamuth.Group
-import com.dreamuth.Room
 import com.dreamuth.School
 import com.dreamuth.ServerCommand
 import com.dreamuth.StudentInfo
@@ -73,10 +72,9 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
         attrs {
             onSubmitFunction = { event ->
                 event.preventDefault()
-                val selectedName = studentName ?: filteredStudents.firstOrNull()?.name
-                selectedName?.let { validName ->
+                studentName?.let { validName ->
                     scope.launch {
-                        val data = Json.encodeToString(Room(validName, school, group))
+                        val data = Json.encodeToString(StudentInfo(school, group, validName))
                         wsClient.trySend(ServerCommand.CREATE_ROOM.name + data)
                     }
                 }
@@ -161,6 +159,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                         onChangeFunction = { event ->
                             val target = event.target as HTMLSelectElement
                             school = School.getSchoolForEnglish(target.value)
+                            studentName = null
                         }
                     }
                 }
@@ -192,6 +191,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                         isActive = group == Group.II
                         onClickFunction = {
                             group = Group.II
+                            studentName = null
                         }
                     }
                     linkItem {
@@ -199,6 +199,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                         isActive = group == Group.III
                         onClickFunction = {
                             group = Group.III
+                            studentName = null
                         }
                     }
                 }
@@ -227,6 +228,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                     reactSelect {
                         attrs {
                             id = "reactSelectStudent"
+                            value = if (studentName == null) null else ReactSelectOption(studentName!!, studentName!!)
                             options = filteredStudents.map { ReactSelectOption(it.name, it.name) }.toTypedArray()
                             onChange = {
                                 studentName = it.label
@@ -240,6 +242,7 @@ private var createRoom = functionalComponent<CreateRoomProps> { props ->
                     classes = mutableListOf("btn btn-primary btn-block rounded-pill")
                     attrs {
                         type = ButtonType.submit
+                        disabled = studentName == null
                     }
                 }
                 +"Create"

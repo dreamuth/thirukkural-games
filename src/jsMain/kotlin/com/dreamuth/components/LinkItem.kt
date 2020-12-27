@@ -18,6 +18,7 @@ package com.dreamuth.components
 
 import kotlinx.css.Color
 import kotlinx.css.color
+import kotlinx.css.opacity
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.role
 import react.RBuilder
@@ -31,6 +32,7 @@ import styled.styledLi
 external interface LinkItemProps: RProps {
     var name: String
     var isActive: Boolean
+    var isDisabled: Boolean
     var onClickFunction: () -> Unit
 }
 
@@ -45,6 +47,9 @@ private var linkItem = functionalComponent<LinkItemProps> { props ->
                 classes = mutableListOf("nav-link $activeStyle rounded-pill")
                 color = Color("#555")
                 put("data-toggle", "pill")
+                if (props.isDisabled) {
+                    opacity = 0.65
+                }
                 attrs {
                     role = "button"
                     onClickFunction = { props.onClickFunction() }

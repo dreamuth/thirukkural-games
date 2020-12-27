@@ -51,15 +51,15 @@ external interface AppState: RState {
     var isLoaded: Boolean
     var gameState: GameState
     var previousGameState: GameState?
-    var registeredStudents: RegisteredStudents
+    var registeredStudents: Students
     var activeUsers: ActiveUsers
     var timerState: TimerState
     var topicState: TopicState
     var adminQuestion: AdminQuestion
     var guestQuestion: GuestQuestion
     var studentScore: StudentScore
-    var roomName: String?
-    var roomNames: List<String>
+    var activeStudent: StudentInfo?
+    var activeStudents: Students
     var isAdminRoom: Boolean
     var adminPasscode: String?
     var guestPasscode: String?
@@ -73,13 +73,13 @@ class App : RComponent<RProps, AppState> () {
             setState {
                 gameState = GameState.NONE
                 activeUsers = ActiveUsers()
-                registeredStudents = RegisteredStudents()
+                registeredStudents = Students()
                 topicState = TopicState()
                 timerState = TimerState()
                 adminQuestion = AdminQuestion()
                 guestQuestion = GuestQuestion()
                 studentScore= StudentScore()
-                roomNames = listOf()
+                activeStudents = Students()
                 isAdminRoom = false
                 isLoaded = true
             }
@@ -87,18 +87,21 @@ class App : RComponent<RProps, AppState> () {
             wsClient.receive { message ->
                 println("Received: $message")
                 when {
-                    message.startsWith(ClientCommand.ACTIVE_ROOMS.name) -> {
-                        val data = message.removePrefix(ClientCommand.ACTIVE_ROOMS.name)
-                        val roomNamesData = Json.decodeFromString<RoomNamesData>(data)
+                    message.startsWith(ClientCommand.ACTIVE_STUDENTS.name) -> {
+                        val data = message.removePrefix(ClientCommand.ACTIVE_STUDENTS.name)
+                        val receivedActiveStudents = Json.decodeFromString<Students>(data)
                         setState {
-                            roomNames = roomNamesData.roomNames
-                            roomName = if (roomNamesData.roomNames.contains(roomName)) roomName
-                            else roomNamesData.roomNames.firstOrNull()
+                            activeStudents = receivedActiveStudents
+                            activeStudent = if (receivedActiveStudents.students.contains(activeStudent)) {
+                                activeStudent
+                            } else {
+                                receivedActiveStudents.students.firstOrNull()
+                            }
                         }
                     }
                     message.startsWith(ClientCommand.REGISTERED_STUDENTS.name) -> {
                         val data = message.removePrefix(ClientCommand.REGISTERED_STUDENTS.name)
-                        val receivedRegisteredStudents = Json.decodeFromString<RegisteredStudents>(data)
+                        val receivedRegisteredStudents = Json.decodeFromString<Students>(data)
                         setState {
                             registeredStudents = receivedRegisteredStudents
                         }
@@ -110,7 +113,7 @@ class App : RComponent<RProps, AppState> () {
                             createRoomErrorMsg = null
                             joinRoomErrorMsg = null
                             isAdminRoom = true
-                            roomName = adminRoomResponse.roomName
+                            activeStudent = adminRoomResponse.studentInfo
                             adminPasscode = adminRoomResponse.adminPasscode
                             guestPasscode = adminRoomResponse.guestPasscode
                             gameState = GameState.ADMIN_ROOM
@@ -123,7 +126,7 @@ class App : RComponent<RProps, AppState> () {
                             createRoomErrorMsg = null
                             joinRoomErrorMsg = null
                             isAdminRoom = true
-                            roomName = adminRoomResponse.roomName
+                            activeStudent = adminRoomResponse.studentInfo
                             adminPasscode = adminRoomResponse.adminPasscode
                             guestPasscode = adminRoomResponse.guestPasscode
                             gameState = GameState.ADMIN_ROOM
@@ -196,16 +199,16 @@ class App : RComponent<RProps, AppState> () {
                     }
                     message.startsWith(ClientCommand.ERROR_ROOM_EXISTS.name) -> {
                         val data = message.removePrefix(ClientCommand.ERROR_ROOM_EXISTS.name)
-                        val room = Json.decodeFromString<Room>(data)
+                        val studentInfo = Json.decodeFromString<StudentInfo>(data)
                         setState {
-                            createRoomErrorMsg = "Room [${room.name}] already exists. Please use different name"
+                            createRoomErrorMsg = "Room [${studentInfo.name}] already exists. Please use different name"
                         }
                     }
                     message.startsWith(ClientCommand.ERROR_ROOM_NOT_EXISTS.name) -> {
                         val data = message.removePrefix(ClientCommand.ERROR_ROOM_EXISTS.name)
-                        val room = Json.decodeFromString<Room>(data)
+                        val studentInfo = Json.decodeFromString<StudentInfo>(data)
                         setState {
-                            joinRoomErrorMsg = "Select room [${room.name}] no longer exists"
+                            joinRoomErrorMsg = "Select room [${studentInfo.name}] no longer exists"
                         }
                     }
                     message.startsWith(ClientCommand.ERROR_INVALID_PASSCODE.name) -> {
@@ -247,8 +250,8 @@ class App : RComponent<RProps, AppState> () {
                     }
                     gameStateComp {
                         gameState = state.gameState
-                        roomName = state.roomName
-                        roomNames = state.roomNames
+                        activeStudent = state.activeStudent
+                        activeStudents = state.activeStudents
                         registeredStudents = state.registeredStudents
                         adminQuestion = state.adminQuestion
                         guestQuestion = state.guestQuestion

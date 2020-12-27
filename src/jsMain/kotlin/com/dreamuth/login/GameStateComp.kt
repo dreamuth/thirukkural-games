@@ -16,11 +16,12 @@
 
 package com.dreamuth.login
 
-import com.dreamuth.RegisteredStudents
+import com.dreamuth.Students
 import com.dreamuth.ActiveUsers
 import com.dreamuth.AdminQuestion
 import com.dreamuth.GameState
 import com.dreamuth.GuestQuestion
+import com.dreamuth.StudentInfo
 import com.dreamuth.StudentScore
 import com.dreamuth.TimerState
 import com.dreamuth.TopicState
@@ -38,9 +39,9 @@ import styled.styledDiv
 external interface GameStateCompProps: RProps {
     var gameState: GameState
     var topicState: TopicState
-    var roomNames: List<String>
-    var roomName: String?
-    var registeredStudents: RegisteredStudents
+    var registeredStudents: Students
+    var activeStudents: Students
+    var activeStudent: StudentInfo?
     var timerState: TimerState
     var adminQuestion: AdminQuestion
     var guestQuestion: GuestQuestion
@@ -57,7 +58,7 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
     when (props.gameState) {
         GameState.NONE -> {
             gameMode {
-                roomNames = props.roomNames
+                activeStudents = props.activeStudents
                 registeredStudents = props.registeredStudents
                 createRoomErrorMsg = props.createRoomErrorMsg
                 joinRoomErrorMsg = props.joinRoomErrorMsg
@@ -82,11 +83,11 @@ private var gameStateComp = functionalComponent<GameStateCompProps> { props ->
                     css {
                         classes = mutableListOf("col-3 pl-0")
                     }
-                    if (props.roomName != null
+                    if (props.activeStudent != null
                         && props.adminPasscode != null
                         && props.guestPasscode != null) {
                         roomInfo {
-                            roomName = props.roomName!!
+                            activeStudent = props.activeStudent!!
                             adminPasscode = props.adminPasscode!!
                             guestPasscode = props.guestPasscode!!
                             activeUsers = props.activeUsers

@@ -141,6 +141,13 @@ class GameState(private val logger: Logger) {
         }
     }
 
+    suspend fun userJoin(userSession: UserSession) {
+        allUserSessions.add(userSession)
+        userSession.send("Welcome ${userSession.name}")
+        sendActiveRoomsToUser(userSession)
+        refreshAndSendRegisteredStudentsToMe(userSession)
+    }
+
     private fun refreshAndSendRegisteredStudentsToMe(userSession: UserSession) {
         val result = service.spreadsheets().values().get(spreadsheetId, studentsRange).execute()
         val newStudents = mutableSetOf<StudentInfo>()
@@ -154,21 +161,14 @@ class GameState(private val logger: Logger) {
         students.clear()
         students.addAll(newStudents)
         GlobalScope.launch {
-            val registeredStudents = ClientCommand.REGISTERED_STUDENTS.name + Json.encodeToString(RegisteredStudents(students))
+            val registeredStudents = ClientCommand.REGISTERED_STUDENTS.name + Json.encodeToString(Students(students))
             userSession.send(registeredStudents)
         }
     }
 
-    suspend fun userJoin(userSession: UserSession) {
-        allUserSessions.add(userSession)
-        userSession.send("Welcome ${userSession.name}")
-        sendActiveRoomsToUser(userSession)
-        refreshAndSendRegisteredStudentsToMe(userSession)
-    }
-
     private suspend fun sendActiveRoomsToUser(userSession: UserSession) {
-        val data = Json.encodeToString(RoomNamesData(rooms.keys.filterNotNull().sorted().toList()))
-        userSession.send(ClientCommand.ACTIVE_ROOMS.name + data)
+        val data = Json.encodeToString(Students(rooms.values.map { it.studentInfo }.toSet()))
+        userSession.send(ClientCommand.ACTIVE_STUDENTS.name + data)
     }
 
     suspend fun sendActiveUsersToAdmins(userInfo: UserInfo) {
@@ -218,9 +218,9 @@ class GameState(private val logger: Logger) {
             listOf(
                 listOf<Any>(
                     timeNow,
-                    questionState.room.school.englishDisplay,
-                    questionState.room.group.englishDisplay,
-                    questionState.room.name,
+                    questionState.studentInfo.school.englishDisplay,
+                    questionState.studentInfo.group.englishDisplay,
+                    questionState.studentInfo.name,
                     questionState.scoreState.score[Topic.Athikaram]!!.count(),
                     questionState.scoreState.score[Topic.KuralPorul]!!.count(),
                     questionState.scoreState.score[Topic.Kural]!!.count(),
@@ -256,9 +256,9 @@ class GameState(private val logger: Logger) {
             msg.addRecipient(Message.RecipientType.TO, InternetAddress("dreamuth@gmail.com"))
             msg.setSubject("HTS Kids Thirukkural Games 2021 : [${userInfo.roomName}] score", "UTF-8")
             val text = """
-                School: ${questionState.room.school.englishDisplay}
-                Age Group: ${questionState.room.group.englishDisplay}
-                Student: ${questionState.room.name}
+                School: ${questionState.studentInfo.school.englishDisplay}
+                Age Group: ${questionState.studentInfo.group.englishDisplay}
+                Student: ${questionState.studentInfo.name}
                 
                 ${Topic.Athikaram.tamilDisplay} : ${questionState.scoreState.score[Topic.Athikaram]?.count()}
                 ${Topic.KuralPorul.tamilDisplay} : ${questionState.scoreState.score[Topic.KuralPorul]?.count()}
@@ -308,19 +308,19 @@ class GameState(private val logger: Logger) {
 
     fun isValidAdmin(adminJoinRoom: AdminJoinRoom): Boolean {
         return users.map { it.value }
-            .filter { it.roomName == adminJoinRoom.roomName }
+            .filter { it.roomName == adminJoinRoom.studentInfo.getRoomName() }
             .any { it.adminPasscode == adminJoinRoom.passcode }
     }
 
     fun isValidGuest(guestJoinRoom: GuestJoinRoom): Boolean {
         return users.map { it.value }
-            .filter { it.roomName == guestJoinRoom.roomName }
+            .filter { it.roomName == guestJoinRoom.studentInfo.getRoomName() }
             .any { it.guestPasscode == guestJoinRoom.passcode }
     }
 
     fun getGuestPasscode(adminJoinRoom: AdminJoinRoom): String {
         return users.map { it.value }
-            .filter { it.roomName == adminJoinRoom.roomName }
+            .filter { it.roomName == adminJoinRoom.studentInfo.getRoomName() }
             .map { it.guestPasscode }
             .first()
     }

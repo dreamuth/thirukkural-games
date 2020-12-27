@@ -17,6 +17,7 @@
 package com.dreamuth.adminRoom
 
 import com.dreamuth.ActiveUsers
+import com.dreamuth.StudentInfo
 import kotlinx.css.fontSize
 import kotlinx.css.pct
 import kotlinx.html.DIV
@@ -32,7 +33,7 @@ import styled.styledP
 import styled.styledSpan
 
 external interface RoomInfoProps: RProps {
-    var roomName: String
+    var activeStudent: StudentInfo
     var adminPasscode: String
     var guestPasscode: String
     var activeUsers: ActiveUsers
@@ -48,7 +49,7 @@ class RoomInfo : RComponent<RoomInfoProps, RState>() {
                 css {
                     classes = mutableListOf("card-header p-2")
                 }
-                +props.roomName
+                +props.activeStudent.getRoomName()
             }
             styledDiv {
                 css {

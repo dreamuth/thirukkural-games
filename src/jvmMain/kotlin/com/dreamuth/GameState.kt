@@ -213,7 +213,7 @@ class GameState(private val logger: Logger) {
     }
 
     private fun updateSheetsReport(questionState: QuestionState) {
-        val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"))
+        val timeNow = LocalDateTime.now(TimeZone.getTimeZone("CST").toZoneId()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"))
         val values = ValueRange().setValues(
             listOf(
                 listOf<Any>(
